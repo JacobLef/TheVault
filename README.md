@@ -2,10 +2,11 @@
 
 ## Docker Configuration: Build and Run
 ````bash
-    docker build -t banking-database .
-    
-    docker run -p 8080:8080 banking-database
+    docker build -t banking-database .    
 ````
+```bash
+    docker run -p 8080:8080 banking-database
+```
 
 #### To use docker compose instead:
 ```bash
