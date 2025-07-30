@@ -30,8 +30,7 @@ public record Transaction(
         || fromAccount != toAccount && TransactionType.InternalTransfer.equals(type)
     ) {
       throw new IllegalArgumentException(
-          "Incorrect transaction type marker for a Transaction of the following: "
-              + this.toString()
+          "Incorrect transaction type marker for a Transaction of the following: " + this
       );
     }
     if (createdAt == null) {
@@ -40,5 +39,10 @@ public record Transaction(
 
     Objects.requireNonNull(transactionId);
     transactionId = transactionId.trim();
+  }
+
+  @Override
+  public String toString() {
+    return "";
   }
 }
