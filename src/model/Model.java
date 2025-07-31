@@ -3,6 +3,7 @@ package model;
 import model.types.AccountType;
 import model.types.UserProperty;
 import model.user.BankAccount;
+import model.user.Transaction;
 import model.user.User;
 import model.user.UserLog;
 
@@ -133,7 +134,7 @@ public interface Model extends ReadableModel {
    *         accounts do not exist within this Model, or if the given amount cannot be withdrawn
    *         from the user whose account is being withdrawn from.
    */
-  void transfer(
+  Transaction transfer(
       String fromUserName,
       String toUserName,
       String fromPass,
