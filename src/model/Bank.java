@@ -24,7 +24,7 @@ import java.util.Objects;
  *  Bank-like structure.
  * <p>
  */
-public class Bank implements Model {
+public class Bank implements Managed {
   private final DataEngine database;
   private final String bankName;
 
@@ -37,7 +37,7 @@ public class Bank implements Model {
    * @param bankName The name of this Bank.
    * @throws NullPointerException if either of the given parameters are {@code null}.
    */
-  public Bank(DataEngine database, String bankName) throws NullPointerException {
+  public Bank(DataEngine database, String bankName, int routingNumber) throws NullPointerException {
     Objects.requireNonNull(database);
     Objects.requireNonNull(bankName);
 
@@ -114,7 +114,11 @@ public class Bank implements Model {
   }
 
   @Override
-  public double getBalance(String userName, String password, String accountName) throws IllegalArgumentException {
+  public double getBalance(
+      String userName,
+      String password,
+      String accountName
+  ) throws IllegalArgumentException {
     return 0;
   }
 
@@ -124,7 +128,9 @@ public class Bank implements Model {
   }
 
   @Override
-  public BankAccount getAccountFor(String userName, String password, String accountName) throws IllegalArgumentException {
+  public BankAccount getAccountFor(
+      String userName, String password, String accountName
+  ) throws IllegalArgumentException {
     return null;
   }
 

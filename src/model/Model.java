@@ -8,16 +8,14 @@ import model.user.User;
 import model.user.UserLog;
 
 /**
- * Serves as the primary host of data for the banking application, acting as a singular bank.
- *
+ * Serves as the base API for what a Banking application can offer, with the assumption that a
+ * Model represents a singular Bank/Banking entity.
  * <p>
- * A Model offers functionality for CRUD operations which can be acted upon on the
- * data within this Model or regards to the Data to which this Model otherwise has access to.
- * This includes both CRUD operations on a User and CRUD operations on the accounts which
- * a User has opened.
- * <p>
+ *   A Model offers CRUD operations for a user and the accounts they create, such that they can
+ *   be properly created, updated, fetched, or removed.
+ * </p>
  */
-public interface Model extends ReadableModel {
+public interface Model {
   /**
    * Creates a new User for this Model, such that this User can open, close, and update bank
    * accounts of their choosing and creation.
@@ -61,13 +59,13 @@ public interface Model extends ReadableModel {
    *         userName does not exist in this Model, or if the given password is incorrect for the
    *         given {@code userName}.
    */
-   BankAccount createAccount(
-       String userName,
-       String password,
-       String accountName,
-       AccountType type,
-       double... initBalance
-   ) throws IllegalArgumentException;
+  BankAccount createAccount(
+      String userName,
+      String password,
+      String accountName,
+      AccountType type,
+      double... initBalance
+  ) throws IllegalArgumentException;
 
   /**
    * Deletes the given account associated with the given user.
@@ -78,11 +76,11 @@ public interface Model extends ReadableModel {
    * @throws IllegalArgumentException if the given user or account do not exist in this Model or
    *         if the given password does not match for the given user.
    */
-   BankAccount deleteAccount(
-       String userName,
-       String password,
-       String accountName
-   ) throws IllegalArgumentException;
+  BankAccount deleteAccount(
+      String userName,
+      String password,
+      String accountName
+  ) throws IllegalArgumentException;
 
   /**
    * Withdraws an {@code amount} amount of money out of the given {@code accountName}, if that
