@@ -7,6 +7,12 @@ import java.util.List;
 /**
  * Serves as a read-only Model such that information can only be read from a ReadableModel
  * instance and no changes can be made to the underlying data.
+ *
+ * <p>
+ * Offers functionality for presence checks regarding users and accounts, and fetching
+ * functionality for the balance of accounts as well as of the account(s) themselves that is/are
+ * associated with a given user.
+ * </p>
  */
 public interface ReadableModel {
   /**

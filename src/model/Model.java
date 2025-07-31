@@ -44,7 +44,7 @@ public interface Model extends ReadableModel {
    * @param password  The password associated with the given user.
    * @param prop      The property to be updated.
    * @param newValue  The value to now be associated with the given property.
-   * @return
+   * @return the new User object associated created after the changes were made.
    */
   User updateUser(String userName, String password, UserProperty prop, String newValue);
 
