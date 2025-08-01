@@ -9,7 +9,8 @@ import model.data_engine.DataEngine;
  * <p>
  *   A Manager offers additional functionality, different from that of a Model, where the current
  *   active Model can be set and the Manager's properties itself can be updated. All other
- *   functionality is the exact same.
+ *   functionality is the exact same and thus appears as such, so long as a Managed Model is
+ *   currently active.
  * </p>
  */
 public interface Manager extends Model {
