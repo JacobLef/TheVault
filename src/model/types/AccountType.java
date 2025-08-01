@@ -8,7 +8,7 @@ public enum AccountType {
   CheckingAccount, SavingsAccount;
 
   AccountType makeType(String type) {
-    return switch (type) {
+    return switch (type.trim()) {
       case "Checking" -> CheckingAccount;
       case "Savings" -> SavingsAccount;
       default -> throw new IllegalArgumentException("Unknown AccountType: " + type);

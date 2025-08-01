@@ -27,6 +27,7 @@ import java.util.Objects;
 public class Bank implements Managed {
   private final DataEngine database;
   private final String bankName;
+  private final int routingNumber;
 
   /**
    * Constructs a new Bank with respect to the given parameters and generalized DataEngine.
@@ -43,6 +44,7 @@ public class Bank implements Managed {
 
     this.database = database;
     this.bankName = bankName;
+    this.routingNumber = routingNumber;
   }
 
   @Override

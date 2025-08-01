@@ -9,7 +9,7 @@ public enum AccountStatus {
   Free, Frozen;
 
   AccountStatus makeStatus(String status) {
-    return switch (status) {
+    return switch (status.trim()) {
       case "Free" -> Free;
       case "Frozen" -> Frozen;
       default -> throw new IllegalArgumentException("Unknown status " + status);

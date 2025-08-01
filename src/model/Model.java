@@ -15,7 +15,7 @@ import model.user.UserLog;
  *   be properly created, updated, fetched, or removed.
  * </p>
  */
-public interface Model {
+public interface Model extends ReadableModel {
   /**
    * Creates a new User for this Model, such that this User can open, close, and update bank
    * accounts of their choosing and creation.
