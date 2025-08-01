@@ -2,6 +2,8 @@ package model.data_engine;
 
 import model.types.DataType;
 
+import java.util.Objects;
+
 /**
  * Specific implementation of a ColumnDefinition such that it simply acts a C-like structure, with
  * a set of getters and no other behavior or properties.
@@ -12,4 +14,10 @@ public record ColumnDefinitionImpl(
     boolean nullable,
     boolean unique,
     boolean primaryKey
-) implements ColumnDefinition { }
+) implements ColumnDefinition {
+  public ColumnDefinitionImpl {
+    Objects.requireNonNull(name);
+    Objects.requireNonNull(type);
+    name = name.trim();
+  }
+}

@@ -7,7 +7,7 @@ import java.io.IOException;
 
 import static java.lang.System.exit;
 
-public class Main {
+public class Server {
   public static void main(String[] args) {
     System.out.println("Banking Database server Starting...");
 

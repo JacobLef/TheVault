@@ -15,12 +15,12 @@ import java.util.stream.Collectors;
  * functionality of querying a database, and simply offers validity and getter operations on
  * the properties of a specific table.
  *
- * Any TableSchemaImpl object is immutable and can only be read from.
+ * @implNote Any TableSchemaImpl object is immutable and can only be read from.
  */
 public class TableSchemaImpl implements TableSchema {
   public static class Builder {
     private String tableName;
-    private List<ColumnDefinition> cols = new ArrayList<>();
+    private final List<ColumnDefinition> cols = new ArrayList<>();
 
     public Builder tableName(String tableName) {
       this.tableName = tableName;
@@ -94,6 +94,12 @@ public class TableSchemaImpl implements TableSchema {
     return columnMap.getOrDefault(columnName, null);
   }
 
+  /**
+   * Is the given value the correct data type?
+   * @param value       The value whose type is to be compared to the expected.
+   * @param expected    The expected type of the provided value.
+   * @return true if they are a match and false otherwise.
+   */
   private boolean isCorrectType(Object value, DataType expected) {
     return switch (expected) {
       case INTEGER -> value instanceof Integer || value instanceof Long;

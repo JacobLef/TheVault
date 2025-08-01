@@ -4,4 +4,4 @@ COPY . .
 RUN mkdir -p build && \
     find src -name "*.java" | xargs javac -d build -cp src
 EXPOSE 8080
-CMD ["java", "-cp", "build", "Main"]
+CMD ["java", "-cp", "build", "Server"]
