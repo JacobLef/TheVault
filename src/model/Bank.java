@@ -48,17 +48,26 @@ public class Bank implements Managed {
   }
 
   @Override
-  public User createUser(String userName, String password, String email) {
+  public User createUser(
+      String userName,
+      String password,
+      String email
+  ) throws IllegalArgumentException, NullPointerException {
     return null;
   }
 
   @Override
-  public UserLog deleteUser(String userName, String password) {
+  public UserLog deleteUser(String userName, String password) throws IllegalArgumentException {
     return null;
   }
 
   @Override
-  public User updateUser(String userName, String password, UserProperty prop, String newValue) {
+  public User updateUser(
+      String userName,
+      String password,
+      UserProperty prop,
+      String newValue
+  ) throws IllegalArgumentException {
     return null;
   }
 
@@ -125,7 +134,15 @@ public class Bank implements Managed {
   }
 
   @Override
-  public List<BankAccount> getAccountsFor(String userName, String password) {
+  public User getUser(String userName, String password) {
+    return null;
+  }
+
+  @Override
+  public List<BankAccount> getAccountsFor(
+      String userName,
+      String password
+  ) throws IllegalArgumentException {
     return List.of();
   }
 

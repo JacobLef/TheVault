@@ -58,6 +58,7 @@ public interface Model extends ReadableModel {
    * @throws IllegalArgumentException if the given accountName already exists, if the given
    *         userName does not exist in this Model, or if the given password is incorrect for the
    *         given {@code userName}.
+   * @throws NullPointerException if any of the given fields are null.
    */
   BankAccount createAccount(
       String userName,
@@ -65,7 +66,7 @@ public interface Model extends ReadableModel {
       String accountName,
       AccountType type,
       double... initBalance
-  ) throws IllegalArgumentException;
+  ) throws IllegalArgumentException, NullPointerException;
 
   /**
    * Deletes the given account associated with the given user.

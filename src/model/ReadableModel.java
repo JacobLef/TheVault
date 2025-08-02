@@ -1,6 +1,7 @@
 package model;
 
 import model.user.BankAccount;
+import model.user.User;
 
 import java.util.List;
 
@@ -30,6 +31,14 @@ public interface ReadableModel {
       String password,
       String accountName
   ) throws IllegalArgumentException;
+
+  /**
+   * Fetches the information a User, including their name, password, and email.
+   * @param userName    The name of the User to be fetched.
+   * @param password    The password of the User to be fetched.
+   * @return the respective User object.
+   */
+  User getUser(String userName, String password);
 
   /**
    * Gets all the BankAccounts associated with the given username, given in a list.

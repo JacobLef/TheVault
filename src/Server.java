@@ -1,6 +1,10 @@
 import controller.Controller;
+import controller.InteractiveController;
 import model.Bank;
 import model.Model;
+import model.ReadableModel;
+import model.data_engine.DataBase;
+import view.CLIView;
 import view.View;
 
 import java.io.IOException;
@@ -11,8 +15,8 @@ public class Server {
   public static void main(String[] args) {
     System.out.println("Banking Database server Starting...");
 
-    Model model = new Bank();
-    View view = new View(ReadableModel(model));
+    Model model = new Bank(DataBase.getInstance(), "Bank One", 1984);
+    View view = new CLIView(model);
     Controller controller = new InteractiveController(model, view);
 
     try {
