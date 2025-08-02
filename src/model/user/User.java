@@ -29,5 +29,24 @@ public record User(
     username = username.trim();
     email = email.trim();
   }
+
+  @Override
+  public String toString() {
+    return
+        "User Id: " + userId + "\n"
+        + "\tUsername: " + username + "\n"
+        + "\tEmail: " + email + "\n"
+        + "\tPassword: " + password + "\n"
+        + "\tCreated At: " + createdAt;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    User user = (User) o;
+    return this.userId == user.userId && this.username.equals(user.username)
+        && this.email.equals(user.email) && this.password.equals(user.password);
+  }
 }
 

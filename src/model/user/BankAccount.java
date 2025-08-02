@@ -32,4 +32,15 @@ public record BankAccount(
       createdAt = LocalDateTime.now();
     }
   }
+
+  @Override
+  public String toString() {
+    return
+        "Bank Account Id: " + accountId + "\n"
+        + "\tUser Id: " + userId + "\n"
+        + "\tBalance: " + balance + "\n"
+        + "\tType: " + type + "\n"
+        + "\tStatus: " + status + "\n"
+        + "\tCreatedAt: " + createdAt + "\n";
+  }
 }
