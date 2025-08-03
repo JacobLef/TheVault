@@ -36,7 +36,7 @@ public interface ReadableModel {
    * Fetches the information a User, including their name, password, and email.
    * @param userName    The name of the User to be fetched.
    * @param password    The password of the User to be fetched.
-   * @return the respective User object.
+   * @return the respective User object or {@code null} if no user exists via the given information.
    */
   User getUser(String userName, String password);
 
