@@ -31,11 +31,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * createUser => DONE
  * updateUser => DONE
  * deleteUser => DONE
- * createAccount
- * deleteAccount
- * withdraw
- * deposit
- * transfer
+ * createAccount => DONE
+ * deleteAccount => DONE
+ * withdraw => DONE
+ * deposit => DONE
+ * transfer => DONE
  * getBalance
  * getUser
  * getAccountFor
@@ -502,5 +502,75 @@ class BankTest {
         Arguments.of("First User", "First Password", null, AccountType.SavingsAccount),
         Arguments.of("First User", "First Password", "First Account", null)
     );
+  }
+
+  @Test
+  public void accountDeletionLeavesBehindNoInformation() {
+    assertDoesNotThrow(() -> this.setBank.getAccountFor(
+        "First User",
+        "First Password",
+        "First Account1"
+        )
+    );
+
+    this.setBank.deleteAccount("First User", "First Password", "First Account1");
+    assertThrows(IllegalStateException.class, () -> this.setBank.getAccountFor(
+        "First User",
+        "First Password",
+        "First Account1"
+        )
+    );
+  }
+
+  @Test
+  public void deletingNonExistentAccountThrowsException() {
+    assertTrue(this.modifiableBank.userExists("First User", "First Password"));
+    // Modifiable bank has no accounts to begin with
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.getAccountFor(
+        "First User",
+        "First Password",
+        "Non Existent Account"
+        )
+    );
+  }
+
+  @Test
+  public void canWithdrawUntilZeroBalance() {
+
+  }
+
+  @Test
+  public void cannotWithdrawAtZeroBalance() {
+
+  }
+
+  @Test
+  public void canDepositAnyAmountOfNonNegativeMoney() {
+
+  }
+
+  @Test
+  public void cannotDepositNegativeMoney() {
+
+  }
+
+  @Test
+  public void canTransferBetweenTwoUsersSameAccountNames() {
+
+  }
+
+  @Test
+  public void canTransferBetweenTwoUsersDifferentAccountNames() {
+
+  }
+
+  @Test
+  public void canTransferBetweenTwoAccountsSameUser() {
+
+  }
+
+  @Test
+  public void cannotTransferFromOrTwoNonExistentAccount() {
+
   }
 }
