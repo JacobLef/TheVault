@@ -3,6 +3,7 @@ package unit;
 import model.Bank;
 import model.Managed;
 import model.data_engine.DataBase;
+import model.types.AccountStatus;
 import model.types.AccountType;
 import model.types.UserProperty;
 import model.user.BankAccount;
@@ -28,20 +29,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * Methods to Test:
- * createUser => DONE
- * updateUser => DONE
- * deleteUser => DONE
- * createAccount => DONE
- * deleteAccount => DONE
- * withdraw => DONE
- * deposit => DONE
- * transfer => DONE
- * getBalance
- * getUser
- * getAccountFor
- * getAccountsFor
- * accountExists
- * userExists
+ * InvalidPassword parameterized test => NOT DONE (set as FAIL for now)
+ * Transfer => NOT DONE (set as FAIL for now)
  */
 
 /**
@@ -126,13 +115,15 @@ class BankTest {
         ),
         () -> staticTestBank.getBalance(invalid, "First Password", "Account One"),
         () -> staticTestBank.getAccountFor(invalid, "First Password", "Account One"),
-        () -> staticTestBank.getAccountsFor(invalid, "First Password")
+        () -> staticTestBank.getAccountsFor(invalid, "First Password"),
+        () -> staticTestBank.accountExists(invalid, "First Password", "First Account1")
     );
   }
 
   @ParameterizedTest
   @MethodSource("invalidPasswordProvider")
   public void allMethodsThrowExceptionForInvalidPassword(Executable exe) {
+    fail("Not yet implemented");
     assertThrows(IllegalArgumentException.class, exe);
   }
 
@@ -165,6 +156,15 @@ class BankTest {
         () -> staticTestBank.getAccountFor(invalid, "First Password", "Account One"),
         () -> staticTestBank.getAccountsFor(invalid, "First Password")
     );
+  }
+
+  @Test
+  public void createAccountDefaultStatusIsFree() {
+    this.modifiableBank.createAccount(
+        "First User", "First Password", "First Account", AccountType.CheckingAccount
+    );
+    BankAccount acc = this.modifiableBank.getAccountFor("First User", "First Password", "First Account");
+    assertEquals(AccountStatus.Free, acc.status());
   }
 
   @Test
@@ -282,9 +282,9 @@ class BankTest {
       );
     }
 
-    assertTrue(this.setBank.userExists("First User", "First Password"));
-    UserLog log = this.setBank.deleteUser("First User", "First Password");
-    assertFalse(this.setBank.userExists("First User", "First Password"));
+    assertTrue(this.modifiableBank.userExists("First User", "First Password"));
+    UserLog log = this.modifiableBank.deleteUser("First User", "First Password");
+    assertFalse(this.modifiableBank.userExists("First User", "First Password"));
 
     User user = log.user();
     Map<String, BankAccount> accounts = log.accounts();
@@ -536,41 +536,279 @@ class BankTest {
 
   @Test
   public void canWithdrawUntilZeroBalance() {
-
+    double[] withdrawals = { 45.75, 10.25, 4.0, 0.0, 20.0, 15.50, 4.50 };
+    for (int i = 0; i < withdrawals.length; i++) {
+      int finalI = i;
+      final double[] actualWithdrawal = new double[1];
+      assertDoesNotThrow(() -> {
+        actualWithdrawal[0] = this.setBank.withdraw(
+            "First User",
+            "First Password",
+            "First Account1",
+            withdrawals[finalI]
+        );
+      });
+      assertEquals(withdrawals[i], actualWithdrawal[0], 0.0);
+    }
   }
 
   @Test
   public void cannotWithdrawAtZeroBalance() {
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.withdraw(
+        "Second User",
+        "Second Password",
+        "Second Account1",
+        1.0
+    ));
+  }
 
+  @Test
+  public void cannotWithdrawMoreThanBalance() {
+    this.setBank.deposit("Second User", "Second Password", "Second Account1", 1.0);
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.withdraw(
+       "Second User", "Second Password", "Second Account1", 1.5
+    ));
+  }
+
+  @Test
+  public void cannotWithdrawNegativeBalance() {
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.withdraw(
+        "First User", "First Password", "First Account1", -1.0
+    ));
   }
 
   @Test
   public void canDepositAnyAmountOfNonNegativeMoney() {
+    double[] deposits = { 45.75, 10.25, 4.0, 0.0, 20.0, 15.50, 4.5 };
+    this.modifiableBank.createAccount(
+        "First User",
+        "First Password",
+        "First Account",
+        AccountType.valueOf("Savings")
+    );
+    this.modifiableBank.createAccount(
+        "First User",
+        "First Password",
+        "Second Account",
+        AccountType.valueOf("Checking"),
+        10.0
+    );
 
+    double expectedFirst = 0;
+    double expectedSecond = 10.0;
+    for (int i = 0; i < deposits.length ; i++) {
+      int finalI = i;
+      expectedFirst += deposits[i];
+      expectedSecond += deposits[i];
+      assertDoesNotThrow(() -> this.modifiableBank.deposit(
+          "First User", "First Password", "First Account", deposits[finalI]
+      ));
+      assertDoesNotThrow(() -> this.modifiableBank.deposit(
+          "First User", "First Password", "Second Account", deposits[finalI]
+      ));
+      BankAccount accOne = this.modifiableBank.getAccountFor(
+          "First User", "First Password", "First Account"
+      );
+      BankAccount accTwo = this.modifiableBank.getAccountFor(
+          "First User", "First Password", "Second Account"
+      );
+      assertEquals(expectedFirst, accOne.balance());
+      assertEquals(expectedSecond, accTwo.balance());
+    }
   }
 
   @Test
   public void cannotDepositNegativeMoney() {
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.deposit(
+        "First User", "First Password", "First Account1", -1.0
+    ));
+  }
 
+  @Test
+  public void depositOfNegativeBalanceDoesNotChangeCurrentBalance() {
+    double originalBal = this.setBank.getAccountFor(
+        "First User", "First Password", "First Account1"
+    ).balance();
+    try {
+      this.setBank.deposit(
+          "First User", "First Password", "First Account1", -1.0
+      );
+    } catch (IllegalArgumentException ignored) {
+      double newBal = this.setBank.getAccountFor(
+          "First User", "First Password", "First Account1"
+      ).balance();
+      assertEquals(originalBal, newBal, 0.0);
+    }
   }
 
   @Test
   public void canTransferBetweenTwoUsersSameAccountNames() {
-
+    fail("Not yet implemented");
   }
 
   @Test
   public void canTransferBetweenTwoUsersDifferentAccountNames() {
-
+    fail("Not yet implemented");
   }
 
   @Test
   public void canTransferBetweenTwoAccountsSameUser() {
-
+    fail("Not yet implemented");
   }
 
   @Test
   public void cannotTransferFromOrTwoNonExistentAccount() {
+    fail("Not yet implemented");
+  }
 
+  @Test
+  public void getBalanceWorksForDefaultedAccounts() {
+    assertEquals(0, this.setBank.getBalance(
+        "Second User", "Second Password", "Second Account1"
+    ));
+  }
+
+  @Test
+  public void getBalanceWorksAfterBalanceUpdates() {
+    assertEquals(0, this.setBank.getBalance(
+        "Second User", "Second Password", "Second Account1"
+    ), 0.0);
+    this.setBank.deposit(
+        "Second User", "Second Password", "Second Account1", 1.0
+    );
+    assertEquals(1.0, this.setBank.getBalance(
+        "Second User", "Second Password", "Second Account1"
+    ), 0.0);
+    this.setBank.withdraw(
+        "Second User", "Second Password", "Second Account1", 1.0
+    );
+    assertEquals(0.0, this.setBank.getBalance(
+        "Second User", "Second Password", "Second Account1"
+    ), 0.0);
+  }
+
+  @Test
+  public void getBalanceThrowsExceptionIfInvalidAccount() {
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.getBalance(
+        "Second User", "Second Password", "Invalid account"
+    ));
+  }
+
+  @Test
+  public void getUserReturnedObjectPreservesData() {
+    String username = "Second User";
+    String password = "Second Password";
+    String email = "second@gmail.com";
+
+    this.modifiableBank.createUser(username, password, email);
+    User user = this.modifiableBank.getUser("Second User", "Second Password");
+    assertEquals(username, user.username());
+    assertEquals(password, user.password());
+    assertEquals(email, user.email());
+  }
+
+  @Test
+  public void getAccountPreservesData() {
+    String accountName = "First Account";
+    AccountType type = AccountType.CheckingAccount;
+    double balance = 100.0;
+
+    this.modifiableBank.createAccount(
+        "First User", "First Password", accountName, type, balance
+    );
+    BankAccount acc = this.modifiableBank.getAccountFor("First User", "First Password", accountName);
+    assertEquals(balance, acc.balance());
+    assertEquals(type, acc.type());
+    assertEquals(AccountStatus.Free, acc.status());
+  }
+
+  @Test
+  public void getAccountThrowsExceptionIfInvalidAccount() {
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.getAccountFor(
+        "First User", "First Password", "Invalid Account"
+    ));
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.getAccountFor(
+        "Second User", "Second Password", "Invalid Account"
+    ));
+  }
+
+  @Test
+  public void getAccountsCollectsAllAccountsUnderUser() {
+    this.setBank.createAccount(
+        "First User", "First Password", "First Account2", AccountType.SavingsAccount
+    );
+    this.setBank.createAccount(
+        "First User", "First Password", "First Account3", AccountType.CheckingAccount, 15.0
+    );
+    List<BankAccount> accs = this.setBank.getAccountsFor("First User", "First Password");
+    assertEquals(3, accs.size());
+    BankAccount first = accs.get(0), second = accs.get(1), third = accs.get(2);
+    assertEquals(100.0, first.balance(), 0.0);
+    assertEquals(0, second.balance(), 0.0);
+    assertEquals(15.0, third.balance(), 0.0);
+    assertEquals(AccountStatus.Free, first.status());
+    assertEquals(AccountStatus.Free, second.status());
+    assertEquals(AccountStatus.Free, third.status());
+    assertEquals(AccountType.CheckingAccount, first.type());
+    assertEquals(AccountType.SavingsAccount, second.type());
+    assertEquals(AccountType.CheckingAccount, third.type());
+  }
+
+  @Test
+  public void getAccountsReturnsEmptyListIfNoAccounts() {
+    assertTrue(this.modifiableBank.getAccountsFor("First User", "First Password").isEmpty());
+  }
+
+  @Test
+  public void accountExistsDoesNotThrowErrorForUnknownAccount() {
+    assertDoesNotThrow(() -> this.modifiableBank.accountExists(
+        "First User", "First Password", "Invalid"
+    ));
+  }
+
+  @Test
+  public void accountExistsCorrectlyIdentifiesAccountPresence() {
+    assertTrue(this.setBank.accountExists("First User", "First Password", "First Account1"));
+    assertTrue(this.setBank.accountExists("Second User", "Second Password", "Second Account1"));
+    assertFalse(this.setBank.accountExists("First User", "First Password", "Invalid"));
+  }
+
+  @Test
+  public void userExistsDoesNotThrowErrorForUnknownUser() {
+    assertDoesNotThrow(() -> this.modifiableBank.userExists("Unknown", "First Password"));
+    assertDoesNotThrow(() -> this.modifiableBank.userExists("First User", "Unknown"));
+  }
+
+  @Test
+  public void userExistsCorrectlyIdentifiesAccount() {
+    assertTrue(this.setBank.userExists("First User", "First Password"));
+    assertTrue(this.setBank.userExists("Second User", "Second Password"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("userExistsCorrectlyIdentifiesAccountAfterModification")
+  public void accountExistsCorrectlyIdentifiesAccountAfterModification(
+      UserProperty prop,
+      String newVal
+  ) {
+    assertTrue(this.setBank.userExists("First User", "First Password"));
+    this.setBank.updateUser("First User", "First Password", prop, newVal);
+    assertFalse(this.setBank.userExists("First User", "First Password"));
+    if (prop == UserProperty.EMAIL) {
+      assertTrue(this.setBank.userExists("First User", "First Password"));
+    } else {
+      assertTrue(this.setBank.userExists(
+          prop == UserProperty.USERNAME ? newVal : "First User",
+          prop == UserProperty.PASSWORD ? newVal : "First Password"
+      ));
+    }
+  }
+
+  private static Stream<Arguments> userExistsCorrectlyIdentifiesAccountAfterModification() {
+    return Stream.of(
+        Arguments.of(UserProperty.PASSWORD, "New Password"),
+        Arguments.of(UserProperty.USERNAME, "New User"),
+        Arguments.of(UserProperty.EMAIL, "New Email")
+    );
   }
 }
