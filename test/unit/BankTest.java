@@ -27,12 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
 
-/*
- * Methods to Test:
- * InvalidPassword parameterized test => NOT DONE (set as FAIL for now)
- * Transfer => NOT DONE (set as FAIL for now)
- */
-
 /**
  * This is a tester class for Bank objects.
  */
@@ -123,38 +117,53 @@ class BankTest {
   @ParameterizedTest
   @MethodSource("invalidPasswordProvider")
   public void allMethodsThrowExceptionForInvalidPassword(Executable exe) {
-    fail("Not yet implemented");
     assertThrows(IllegalArgumentException.class, exe);
   }
 
   private static Stream<Executable> invalidPasswordProvider() {
     assertTrue(staticTestBank.userExists("First User", "First Password"));
-    String invalid = "Invalid Username";
+    String invalidPassword = "Invalid Password";
+    staticTestBank.createAccount(
+        "First User",
+        "First Password",
+        "Account One",
+        AccountType.CheckingAccount,
+        1000.0
+    );
+    staticTestBank.createAccount(
+        "Second User",
+        "Second Password",
+        "Account Two",
+        AccountType.CheckingAccount,
+        100.0
+    );
+
     return Stream.of(
         () -> staticTestBank.createAccount(
-            invalid,
-            "First Password",
+            "First User",
+            invalidPassword,
             "Account Name",
             AccountType.CheckingAccount
-          ),
-        () -> staticTestBank.withdraw(invalid, "First Password", "First Account", 10),
-        () -> staticTestBank.deposit(invalid, "First Password", "First Account", 50),
-        () -> staticTestBank.deleteAccount(invalid, "First Password", "First Account"),
+        ),
+        () -> staticTestBank.withdraw("First User", invalidPassword, "Account One", 10),
+        () -> staticTestBank.deposit("First User", invalidPassword, "Account One", 50),
+        () -> staticTestBank.deleteAccount("First User", invalidPassword, "Account One"),
         () -> staticTestBank.transfer(
-            invalid, "Second User",
-            "First Password", "Second Password",
+            "First User", "Second User",
+            invalidPassword, "Second Password",
             "Account One", "Account Two",
             5.0
         ),
         () -> staticTestBank.transfer(
-            "First User", invalid,
-            "First Password", "Second Password",
+            "First User", "Second User",
+            "First Password", invalidPassword,
             "Account One", "Account Two",
             5.0
         ),
-        () -> staticTestBank.getBalance(invalid, "First Password", "Account One"),
-        () -> staticTestBank.getAccountFor(invalid, "First Password", "Account One"),
-        () -> staticTestBank.getAccountsFor(invalid, "First Password")
+        () -> staticTestBank.getBalance("First User", invalidPassword, "Account One"),
+        () -> staticTestBank.getAccountFor("First User", invalidPassword, "Account One"),
+        () -> staticTestBank.getAccountsFor("First User", invalidPassword),
+        () -> staticTestBank.accountExists("First User", invalidPassword, "Account One")
     );
   }
 
@@ -641,24 +650,103 @@ class BankTest {
     }
   }
 
-  @Test
-  public void canTransferBetweenTwoUsersSameAccountNames() {
-    fail("Not yet implemented");
-  }
 
   @Test
-  public void canTransferBetweenTwoUsersDifferentAccountNames() {
-    fail("Not yet implemented");
+  public void transferProperlyUpdatesTheFromAndToAccountBalances() {
+    double originalFromAmt = this.setBank.getBalance(
+        "First User", "First Password", "First Account1"
+    );
+    double originalToAmt = this.setBank.getBalance(
+        "Second User", "Second Password", "Second Account1"
+    );
+    double transferAmt = 10.0;
+
+    assertDoesNotThrow(() -> this.modifiableBank.transfer(
+        "First User",
+        "Second User",
+        "First Password",
+        "Second Password",
+        "First Account1",
+        "Second Account1",
+        transferAmt
+    ));
+
+    double newFromAmt = this.setBank.getBalance(
+        "First User", "First Password", "First Account1"
+    );
+    double newToAmt = this.setBank.getBalance(
+        "Second User", "Second Password", "Second Account1"
+    );
+    assertEquals(originalFromAmt - transferAmt, newFromAmt, 0.0);
+    assertEquals(originalToAmt + transferAmt, newToAmt, 0.0);
+
+
   }
 
   @Test
   public void canTransferBetweenTwoAccountsSameUser() {
-    fail("Not yet implemented");
+    this.setBank.createAccount(
+        "First User",
+        "First Password",
+        "First Account2",
+        AccountType.valueOf("Savings")
+    );
+
+    double originalFromAmount = this.setBank.getBalance(
+        "First User", "First Password", "First Account1"
+    );
+    double originalToAmount = this.setBank.getBalance(
+        "First User", "First Password", "First Account2"
+    );
+    double transferAmount = 10.0;
+
+    assertDoesNotThrow(() -> this.setBank.transfer(
+        "First User",
+        "First User",
+        "First Password",
+        "First Password",
+        "First Account1",
+        "First Account2",
+        transferAmount
+    ));
+
+    assertEquals(originalFromAmount - transferAmount, this.setBank.getBalance(
+        "First User", "First Password", "First Account1"
+    ), 0.0);
+    assertEquals(originalToAmount + transferAmount, this.setBank.getBalance(
+        "First User", "First Password", "First Account2"
+    ), 0.0);
   }
 
   @Test
   public void cannotTransferFromOrTwoNonExistentAccount() {
-    fail("Not yet implemented");
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.transfer(
+        "First User",
+        "Second User",
+        "First Password",
+        "Second Password",
+        "First Account1",
+        "Invalid Account",
+        100.0
+    ));
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.transfer(
+        "First User",
+        "Second User",
+        "First Password",
+        "Second Password",
+        "Invalid Account",
+        "Second Account1",
+        10.0
+    ));
+    assertThrows(IllegalArgumentException.class, () -> this.setBank.transfer(
+        "First User",
+        "Second User",
+        "First Password",
+        "Second Password",
+        "Invalid Account",
+        "Invalid Account",
+        10.0
+    ));
   }
 
   @Test
