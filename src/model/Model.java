@@ -24,8 +24,14 @@ public interface Model extends ReadableModel {
    *                  must be entered before any transaction.
    * @param email     The email associated with this User's account.
    * @return The respective User object that is created as a result of this command.
+   * @throws IllegalArgumentException if there already exists a user with the given username or
+   *         email, as those are unique identifiers for users.
    */
-  User createUser(String userName, String password, String email);
+  User createUser(
+      String userName,
+      String password,
+      String email
+  ) throws IllegalArgumentException, NullPointerException;
 
   /**
    * Deletes the given user from this Model such that all the accounts associated with the
@@ -33,8 +39,14 @@ public interface Model extends ReadableModel {
    * @param userName  The name of the user whose accounts are to be closed.
    * @param password  The password of the user whose accounts are to be closed.
    * @return A log of all the information associated with the account which was deleted.
+   * @throws IllegalArgumentException if the given username or password do not exist within this
+   *         Model.
+   * @throws RuntimeException if there is an issue with the deletion of the data.
    */
-  UserLog deleteUser(String userName, String password);
+  UserLog deleteUser(
+      String userName,
+      String password
+  ) throws IllegalArgumentException, RuntimeException;
 
   /**
    * Updates the given property for the provided User within this Model.

@@ -9,16 +9,16 @@ import java.util.Objects;
 /**
  * An immutable instance of a BankAccount such that it contains all the relevant information
  * pertinent to a User's account but cannot be changed.
- * @param accountId   The ID of the account.
- * @param userId      The ID of the user who uses this account.
+ * @param username    The name of the user.
+ * @param accountName The name of the account.
  * @param balance     The balance of this account.
  * @param type        The type of Account which this BankAccount represents.
  * @param status      The status of this BankAccount.
  * @param createdAt   The time at which this BankAccount was created.
  */
 public record BankAccount(
-    int accountId,
-    int userId,
+    String username,
+    String accountName,
     double balance,
     AccountType type,
     AccountStatus status,
@@ -36,8 +36,8 @@ public record BankAccount(
   @Override
   public String toString() {
     return
-        "Bank Account Id: " + accountId + "\n"
-        + "\tUser Id: " + userId + "\n"
+        "Username: " + username + "\n"
+        + "\tBank Account Name: " + accountName + "\n"
         + "\tBalance: " + balance + "\n"
         + "\tType: " + type + "\n"
         + "\tStatus: " + status + "\n"
