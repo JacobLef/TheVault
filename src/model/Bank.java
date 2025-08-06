@@ -9,6 +9,7 @@ import model.user.User;
 import model.user.UserLog;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -25,7 +26,7 @@ import java.util.Objects;
  * <p>
  */
 public class Bank implements Managed {
-  private final DataEngine database;
+  private final DataEngine engine;
   private final String bankName;
   private final int routingNumber;
 
@@ -42,7 +43,7 @@ public class Bank implements Managed {
     Objects.requireNonNull(database);
     Objects.requireNonNull(bankName);
 
-    this.database = database;
+    this.engine = database;
     this.bankName = bankName;
     this.routingNumber = routingNumber;
   }
@@ -53,7 +54,21 @@ public class Bank implements Managed {
       String password,
       String email
   ) throws IllegalArgumentException, NullPointerException {
-    return null;
+    if (userName == null || password == null || email == null) {
+      throw new NullPointerException("Username, password, and email cannot be null!");
+    }
+
+    checkUsernameAndEmail(userName, email);
+
+    Map<String, Object> userRecord = Map.of(
+        "username", userName,
+        "password", password,
+        "email", email
+    );
+
+    engine.insert("users", userRecord);
+
+    return new User(userName, password, email);
   }
 
   @Override
@@ -161,5 +176,26 @@ public class Bank implements Managed {
   @Override
   public boolean userExists(String userName, String password) {
     return false;
+  }
+
+  /**
+   * Are the given username and email already assigned to an account within this Bank?
+   * @param userName    the name of the user to be checked.
+   * @param email       the email to be checked.
+   * @throws IllegalArgumentException if either the given email or username already exist within
+   *         this Bank, associated with a current user.
+   */
+  private void checkUsernameAndEmail(
+      String userName,
+      String email
+  ) throws IllegalArgumentException {
+    boolean duplicateUsername = engine.exists("user", Map.of("username", userName));
+    boolean duplicateEmail = engine.exists("user", Map.of("email", email));
+    if (duplicateUsername) {
+      throw new IllegalArgumentException("Username already exists under a user!" + userName);
+    }
+    if (duplicateEmail) {
+      throw new IllegalArgumentException("Email already exists under a user!" + email);
+    }
   }
 }

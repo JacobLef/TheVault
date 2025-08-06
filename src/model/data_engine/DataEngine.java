@@ -24,12 +24,17 @@ public interface DataEngine {
   /**
    * Inserts a new record into the specified table.
    *
+   * @param bankName  the name of the bank executing this operation.
+   * @param routingNumber the routing number associated with the given bank.
    * @param tableName the name of the table to insert into.
    * @param record    the key-value pairs representing the record to insert.
-   * @throws IllegalArgumentException if tableName is invalid or record violates table constraints.
+   * @throws IllegalArgumentException if tableName is invalid, record violates table constraints,
+   *         or if the given bankName and routingNumber do not match.
    * @throws NullPointerException if tableName or record is {@code null}
    */
   void insert(
+      String bankName,
+      int routingNumber,
       String tableName,
       Map<String, Object> record
   ) throws IllegalArgumentException, NullPointerException;
@@ -37,77 +42,110 @@ public interface DataEngine {
   /**
    * Retrieves all records from the specified table that match the given criteria.
    *
+   * @param bankName  the name of the bank executing this operation.
+   * @param routingNumber the routing number associated with the given bank.
    * @param tableName the name of the table to query.
    * @param criteria  the key-value pairs that records must match, or empty map for all records.
    * @return list of matching records as key-value pairs, empty list if no matches found
-   * @throws IllegalArgumentException if tableName is invalid
+   * @throws IllegalArgumentException if tableName is invalid, or if the given bankName and
+   *         routingNumber do not match.
    * @throws NullPointerException if tableName or criteria is {@code null}
    */
   List<Map<String, Object>> select(
-      String tableName, Map<String, Object> criteria
+      String bankName,
+      int routingNumber,
+      String tableName,
+      Map<String, Object> criteria
   ) throws IllegalArgumentException, NullPointerException;
 
   /**
    * Retrieves the first record from the specified table that matches the given criteria.
-   *
+   * @param bankName  the name of the bank executing this operation.
+   * @param routingNumber the routing number associated with the given bank.
    * @param tableName the name of the table to query.
    * @param criteria  the key-value pairs that the record must match.
    * @return the first matching record as key-value pairs, or {@code null} if no match found
-   * @throws IllegalArgumentException if tableName is invalid
+   * @throws IllegalArgumentException if tableName is invalid or if the given bank and routingNumber
+   *         do not match.
    * @throws NullPointerException if tableName or criteria is {@code null}
    */
   Map<String, Object> selectOne(
-      String tableName, Map<String, Object> criteria
+      String bankName,
+      int routingNumber,
+      String tableName,
+      Map<String, Object> criteria
   ) throws IllegalArgumentException, NullPointerException;
 
   /**
    * Updates all records in the specified table that match the given criteria.
    *
+   * @param bankName  the name of the bank executing this operation.
+   * @param routingNumber the routing number associated with the given bank.
    * @param tableName the name of the table to update.
    * @param criteria  the key-value pairs that records must match to be updated.
    * @param newValues the key-value pairs representing the new field values
-   * @throws IllegalArgumentException if tableName is invalid or newValues violate table constraints
+   * @throws IllegalArgumentException if tableName is invalid, newValues violate table
+   *         constraints, or if the given bank and routing number do not match.
    * @throws NullPointerException if tableName, criteria, or newValues is {@code null}
    */
   void update(
-      String tableName, Map<String, Object> criteria, Map<String, Object> newValues
+      String bankName,
+      int routingNumber,
+      String tableName,
+      Map<String, Object> criteria,
+      Map<String, Object> newValues
   ) throws IllegalArgumentException, NullPointerException;
 
   /**
    * Deletes all records from the specified table that match the given criteria.
    *
+   * @param bankName  the name of the bank executing this operation.
+   * @param routingNumber the routing number associated with the given bank.
    * @param tableName  the name of the table to delete from.
    * @param criteria   the key-value pairs that records must match to be deleted.
-   * @throws IllegalArgumentException if tableName is invalid
+   * @throws IllegalArgumentException if tableName is invalid, or if the given bank and routing
+   *         number do not match.
    * @throws NullPointerException if tableName or criteria is {@code null}
    */
   void delete(
-      String tableName, Map<String, Object> criteria
+      String bankName,
+      int routingNumber,
+      String tableName,
+      Map<String, Object> criteria
   ) throws IllegalArgumentException, NullPointerException;
 
   /**
    * Retrieves all records from the specified table.
-   *
+   * @param bankName  the name of the bank executing this operation.
+   * @param routingNumber the routing number associated with the given bank.
    * @param tableName the name of the table to query.
    * @return list of all records in the table as key-value pairs, empty list if table is empty
-   * @throws IllegalArgumentException if tableName is invalid
+   * @throws IllegalArgumentException if tableName is invalid, or if the given bank name and
+   *         routing number do not match.
    * @throws NullPointerException if tableName is {@code null}
    */
   List<Map<String, Object>> selectAll(
+      String bankName,
+      int routingNumber,
       String tableName
   ) throws IllegalArgumentException, NullPointerException;
 
   /**
    * Checks whether any records exist in the specified table that match the given criteria.
-   *
+   * @param bankName  the name of the bank executing this operation.
+   * @param routingNumber the routing number associated with the given bank.*
    * @param tableName the name of the table to check.
    * @param criteria  the key-value pairs that records must match.
    * @return {@code true} if at least one matching record exists, {@code false} otherwise
-   * @throws IllegalArgumentException if tableName is invalid
+   * @throws IllegalArgumentException if tableName is invalid, or if the given bank name and
+   *         routing number do not match.
    * @throws NullPointerException if tableName or criteria is {@code null}
    */
   boolean exists(
-      String tableName, Map<String, Object> criteria
+      String bankName,
+      int routingNumber,
+      String tableName,
+      Map<String, Object> criteria
   ) throws IllegalArgumentException, NullPointerException;
 
   /**

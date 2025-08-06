@@ -1,8 +1,6 @@
 package model.user;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Serves as a storage for all the information associated with a User, including the information
@@ -16,5 +14,11 @@ public record UserLog(
 ) {
   public UserLog {
     Objects.requireNonNull(user);
+    if (accounts == null) {
+      accounts = new HashMap<>();
+    }
+    if (transactions == null) {
+      transactions = new ArrayList<>();
+    }
   }
 }
