@@ -15,17 +15,18 @@ public record User(
     String username,
     String password,
     String email,
-    LocalDateTime... createdAt
+    LocalDateTime createdAt
 ) {
   public User {
-    if (createdAt.length == 0) {
-      createdAt = new LocalDateTime[]{LocalDateTime.now()};
-    }
     Objects.requireNonNull(username);
     Objects.requireNonNull(email);
     Objects.requireNonNull(password);
     username = username.trim();
     email = email.trim();
+  }
+
+  public User(String username, String password, String email) {
+    this(username, password, email, LocalDateTime.now());
   }
 
   @Override
@@ -34,7 +35,7 @@ public record User(
         "Username: " + username + "\n"
         + "\tEmail: " + email + "\n"
         + "\tPassword: " + password + "\n"
-        + "\tCreated At: " + createdAt[0];
+        + "\tCreated At: " + createdAt;
   }
 
   @Override

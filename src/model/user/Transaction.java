@@ -26,8 +26,8 @@ public record Transaction(
 ) {
   public Transaction {
     if (
-        fromUsername.equals(toUsername) && TransactionType.ExternalTransfer.equals(type)
-        || !fromUsername.equals(toUsername) && TransactionType.InternalTransfer.equals(type)
+        fromUsername.equals(toUsername) && TransactionType.EXTERNALTRANSFER.equals(type)
+        || !fromUsername.equals(toUsername) && TransactionType.INTERNALTRANSFER.equals(type)
     ) {
       throw new IllegalArgumentException(
           "Incorrect transaction type marker for a Transaction of the following: " + this
@@ -37,6 +37,25 @@ public record Transaction(
     if (createdAt == null) {
       createdAt = LocalDateTime.now();
     }
+  }
+
+  public Transaction(
+      String fromUsername,
+      String toUsername,
+      String fromAccountName,
+      String toAccountName,
+      double amount,
+      TransactionType type
+  ) {
+    this(
+        fromUsername,
+        toUsername,
+        fromAccountName,
+        toAccountName,
+        amount,
+        type,
+        LocalDateTime.now()
+    );
   }
 
   @Override

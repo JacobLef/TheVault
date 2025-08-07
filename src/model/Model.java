@@ -102,17 +102,18 @@ public interface Model extends ReadableModel {
    * @param password    The password of the account associated with the given userName.
    * @param accountName The name of the account to withdraw from.
    * @param amount The amount of money to withdraw.
-   * @return The amount of money withdrawn from the account.
+   * @return The amount of money withdrawn.
    * @throws IllegalArgumentException if the given accountName does not exist, if there is not
    *         enough money to withdraw, if the given userName does not exist, or if the given
    *         password is not the correct password for the given userName.
+   * @throws IllegalStateException if the account to be withdrawn from is currently frozen.
    */
   double withdraw(
       String userName,
       String password,
       String accountName,
       double amount
-  ) throws IllegalArgumentException;
+  ) throws IllegalArgumentException, IllegalStateException;
 
   /**
    * Deposits {@code amount} of money into the given {@code accountName} stored within this Model.
@@ -121,9 +122,10 @@ public interface Model extends ReadableModel {
    * @param password    The password of the given User.
    * @param accountName The name of the account to deposit money into.
    * @param amount The amount of money which is to be deposited into the given account.
+   * @return The amount of money deposited.
    * @throws IllegalArgumentException if the given account does not exist within this Model.
    */
-  void deposit(
+  double deposit(
       String userName,
       String password,
       String accountName,

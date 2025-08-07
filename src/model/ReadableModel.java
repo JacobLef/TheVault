@@ -69,11 +69,10 @@ public interface ReadableModel {
   /**
    * Does the given account exist under the given user in this ReadableModel?
    * @param userName  The user to check under.
-   * @param password  The password of the given user.
    * @param accountName The name of the account which is to be checked for its presence.
    * @return true -> does exist, false otherwise.
    */
-  boolean accountExists(String userName, String password, String accountName);
+  boolean accountExists(String userName, String accountName);
 
   /**
    * Does the given user and password exist within this ReadableModel?

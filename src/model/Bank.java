@@ -11,10 +11,7 @@ import model.user.User;
 import model.user.UserLog;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +26,14 @@ import java.util.stream.Collectors;
  *  data is stored. It simply acts as an API through which outside users can gain access to a
  *  Bank-like structure.
  * <p>
+ *
+ * <p>
+ *   A Bank object relies on the fixed DataEngine schema, such that the following relations must
+ *   be guaranteed to be defined by the given DataEngine:
+ *    - {@code users} (user authentication and profile data)
+ *    - {@code accounts} (account information and balances)
+ *    - {@code transactions} (financial transaction records)
+ * </p>
  */
 public class Bank implements Managed {
   private final DataEngine engine;
@@ -55,16 +60,16 @@ public class Bank implements Managed {
 
   @Override
   public User createUser(
-      String userName,
+      String username,
       String password,
       String email
   ) throws IllegalArgumentException, NullPointerException {
-    if (userName == null || password == null || email == null) {
+    if (username == null || password == null || email == null) {
       throw new NullPointerException("Username, password, and email cannot be null!");
     }
 
     boolean duplicateUsername = engine.exists(
-        this.name, this.routingNumber, "users", Map.of("username", userName)
+        this.name, this.routingNumber, "users", Map.of("username", username)
     );
     boolean duplicateEmail = engine.exists(
         this.name, this.routingNumber, "users", Map.of("email", email)
@@ -73,74 +78,74 @@ public class Bank implements Managed {
       throw new IllegalArgumentException("Email is already in use: " + email);
     }
     if (duplicateUsername) {
-      throw new IllegalArgumentException("Username is already in use: " + userName);
+      throw new IllegalArgumentException("Username is already in use: " + username);
     }
 
     Map<String, Object> userRecord = Map.of(
-        "username", userName,
+        "username", username,
         "password", password,
         "email", email
     );
 
     engine.insert(this.name, this.routingNumber, "users", userRecord);
 
-    return new User(userName, password, email);
+    return new User(username, password, email);
   }
 
   @Override
   public UserLog deleteUser(
-      String userName,
+      String username,
       String password
   ) throws RuntimeException {
-    this.checkCredentials(userName, password);
+    this.checkCredentials(username, password);
 
     Map<String, Object> userRecord = engine.selectOne(
         this.name,
         this.routingNumber,
         "users",
-        Map.of("username", userName, "password", password)
+        Map.of("username", username, "password", password)
     );
 
-    List<Map<String, Object>> accounts = engine.select(
+    List<Map<String, Object>> accountRecords = engine.select(
         this.name,
         this.routingNumber,
         "accounts",
-        Map.of("ownerUsername", userName)
+        Map.of("ownerUsername", username)
     );
 
     List<Map<String, Object>> transactionRecords = new ArrayList<>();
-    for (Map<String, Object> record: accounts) {
-      String accountName = (String) record.get("accountName");
+    for (Map<String, Object> account: accountRecords) {
+      String accountName = (String) account.get("accountName");
       List<Map<String, Object>> fromTransactions = engine.select(
           this.name,
           this.routingNumber,
           "transactions",
-          Map.of("fromUser", userName, "fromAccount", accountName)
+          Map.of("fromUser", username, "fromAccount", accountName)
       );
 
       List<Map<String, Object>> toTransactions = engine.select(
           this.name,
           this.routingNumber,
           "transactions",
-          Map.of("toUser", userName, "toAccount", accountName)
+          Map.of("toUser", username, "toAccount", accountName)
       );
 
       transactionRecords.addAll(fromTransactions);
       transactionRecords.addAll(toTransactions);
     }
 
-    this.deleteUserData(userName, password, transactionRecords, accounts);
+    this.deleteUserData(username, password, transactionRecords, accountRecords);
 
-    User deletedUser = new User(userName, password, (String) userRecord.get("email"));
-    Map<String, BankAccount> deletedAccounts = accounts.stream()
+    User deletedUser = new User(username, password, (String) userRecord.get("email"));
+    Map<String, BankAccount> deletedAccounts = accountRecords.stream()
         .collect(Collectors.toMap(
             record -> (String) record.get("accountName"),
             record -> new BankAccount(
                 (String) record.get("ownerUsername"),
                 (String) record.get("accountName"),
                 (Double) record.get("balance"),
-                (AccountType) record.get("accountType"),
-                (AccountStatus) record.get("accountStatus"),
+                (AccountType) record.get("type"),
+                (AccountStatus) record.get("status"),
                 (LocalDateTime) record.get("createdAt")
             )
         ));
@@ -161,12 +166,12 @@ public class Bank implements Managed {
 
   @Override
   public User updateUser(
-      String userName,
+      String username,
       String password,
       UserProperty prop,
       String newValue
   ) throws IllegalArgumentException {
-    this.checkCredentials(userName, password);
+    this.checkCredentials(username, password);
 
     if (newValue == null) {
       throw new NullPointerException("New value cannot be null!");
@@ -182,7 +187,7 @@ public class Bank implements Managed {
       }
     }
 
-    Map<String, Object> userCriteria = Map.of("username", userName, "password", password);
+    Map<String, Object> userCriteria = Map.of("username", username, "password", password);
     Map<String, Object> updates = Map.of(prop.toString().toLowerCase(), newValue);
 
     engine.beginTransaction();
@@ -191,26 +196,26 @@ public class Bank implements Managed {
 
       if (prop == UserProperty.USERNAME) {
         List<Map<String, Object>> userAccounts = engine.select(
-            name, routingNumber, "accounts", Map.of("ownerUsername", userName)
+            name, routingNumber, "accounts", Map.of("ownerUsername", username)
         );
 
         for (Map<String, Object> record: userAccounts) {
           engine.update(
               name, routingNumber, "accounts",
-              Map.of("ownerUsername", userName, "accountName", record.get("accountName")),
+              Map.of("ownerUsername", username, "accountName", record.get("accountName")),
               Map.of("ownerUsername", newValue)
           );
         }
 
         engine.update(
             name, routingNumber, "transactions",
-            Map.of("fromUser", userName),
+            Map.of("fromUser", username),
             Map.of("fromUser", newValue)
         );
 
         engine.update(
             name, routingNumber, "transactions",
-            Map.of("toUser", userName),
+            Map.of("toUser", username),
             Map.of("toUser", newValue)
         );
       }
@@ -221,7 +226,7 @@ public class Bank implements Managed {
       throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
     }
 
-    String updatedUsername = prop == UserProperty.USERNAME ? newValue : userName;
+    String updatedUsername = prop == UserProperty.USERNAME ? newValue : username;
     String updatedPassword = prop == UserProperty.PASSWORD ? newValue : password;
 
     Map<String, Object> updatedUserRecord = engine.selectOne(
@@ -234,116 +239,84 @@ public class Bank implements Managed {
 
   @Override
   public BankAccount createAccount(
-      String userName,
+      String username,
       String password,
       String accountName,
       AccountType type,
       double... initBalance
   ) throws IllegalArgumentException {
-    return null;
+    if (type == null || accountName == null) {
+      throw new NullPointerException("Account type and account name must be provided!");
+    }
+    this.checkCredentials(username, password);
+
+    if (accountExists(username, accountName)) {
+      throw new IllegalArgumentException(
+          "An account with the following properties already exists: \n"
+          + "\tBank: " + this.name + "\n"
+          + "\tUsername: " + username + "\n"
+          + "\tAccount Name: " + accountName + "\n"
+          + "\tAccount Type: " + type + "\n"
+      );
+    }
+
+    double bal = initBalance.length == 0 ? 0 : initBalance[0];
+    engine.insert(
+        name, routingNumber, "accounts",
+        Map.of(
+            "ownerUsername", username,
+            "accountName", accountName,
+            "type", type.toString(),
+            "balance", bal
+        )
+    );
+
+    return new BankAccount(
+        username, accountName, bal, type, AccountStatus.Free, LocalDateTime.now()
+    );
   }
 
   @Override
   public BankAccount deleteAccount(
-      String userName,
+      String username,
       String password,
       String accountName
   ) throws IllegalArgumentException {
-    return null;
-  }
-
-  @Override
-  public double withdraw(
-      String userName,
-      String password,
-      String accountName,
-      double amount
-  ) throws IllegalArgumentException {
-    return 0;
-  }
-
-  @Override
-  public void deposit(
-      String userName,
-      String password,
-      String accountName,
-      double amount
-  ) throws IllegalArgumentException {
-
-  }
-
-  @Override
-  public Transaction transfer(
-      String fromUserName,
-      String toUserName,
-      String fromPass,
-      String toPass,
-      String fromAccountName,
-      String toAccountName,
-      double amount
-  ) throws IllegalArgumentException {
-    return null;
-  }
-
-  @Override
-  public double getBalance(
-      String userName,
-      String password,
-      String accountName
-  ) throws IllegalArgumentException {
-    return 0;
-  }
-
-  @Override
-  public User getUser(String userName, String password) {
-    return null;
-  }
-
-  @Override
-  public List<BankAccount> getAccountsFor(
-      String userName,
-      String password
-  ) throws IllegalArgumentException {
-    return List.of();
-  }
-
-  @Override
-  public BankAccount getAccountFor(
-      String userName, String password, String accountName
-  ) throws IllegalArgumentException {
-    return null;
-  }
-
-  @Override
-  public boolean accountExists(String userName, String password, String accountName) {
-    return false;
-  }
-
-  @Override
-  public boolean userExists(String userName, String password) {
-    return false;
-  }
-
-  /**
-   * Is the given credentials a valid user within this Bank?
-   * @param userName the username to be checked.
-   * @param password the password to be checked.
-   * @throws IllegalArgumentException if the given username does not exist in this Bank or if the
-   *         given password does not match for the username.
-   */
-  private void checkCredentials(String userName, String password) {
-    boolean isInvalid = !this.engine.exists(
-        this.name,
-        this.routingNumber,
-        "users",
-        Map.of("username", userName, "password", password)
-    );
-    if (isInvalid) {
+    this.checkCredentials(username, password);
+    if (!accountExists(username, accountName)) {
       throw new IllegalArgumentException(
-          "The given user does not exist within " + this.name + ": \n"
-              + "Username: " + userName + "\n" + "Password: " + password
+          "Within bank of name " + name + "The account by the name of " + accountName + " does not "
+          + "exist under the user " + username + "."
       );
     }
+
+    double currentBal = (double) this.engine.selectOne(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName)
+    ).get("balance");
+    if (currentBal != 0) {
+      throw new IllegalArgumentException("Cannot delete an account with a balance!");
+    }
+
+    engine.update(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName),
+        Map.of("status", AccountStatus.Closed)
+    );
+
+    Map<String, Object> updatedAccountRecord = engine.selectOne(
+       name, routingNumber, "accounts",
+       Map.of("ownerUsername", username, "accountName", accountName)
+    );
+
+    return new BankAccount(
+        (String) updatedAccountRecord.get("ownerUsername"),
+        (String) updatedAccountRecord.get("accountName"),
+        (Double) updatedAccountRecord.get("balance"),
+        (AccountType) updatedAccountRecord.get("type"),
+        (AccountStatus) updatedAccountRecord.get("status"),
+        (LocalDateTime) updatedAccountRecord.get("createdAt")
+    );
   }
 
   /**
@@ -395,6 +368,320 @@ public class Bank implements Managed {
     } catch (Exception e) {
       engine.rollbackTransaction();
       throw new RuntimeException("Failed to delete user: " + e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public double withdraw(
+      String username,
+      String password,
+      String accountName,
+      double amount
+  ) throws IllegalArgumentException, IllegalStateException {
+    this.withdrawBalance(username, password, accountName, amount);
+
+    Map<String, Object> depositRecord = this.createTransactionRecord(
+        TransactionType.WITHDRAWAL, null, username, null, accountName, amount, "Withdraw"
+    );
+    this.engine.insert(name, routingNumber, "transactions", depositRecord);
+
+    return amount;
+  }
+
+  private void withdrawBalance(
+      String username,
+      String password,
+      String accountName,
+      double amount
+  ) throws IllegalArgumentException, IllegalStateException {
+    if (amount < 0) {
+      throw new IllegalArgumentException("Cannot withdraw a balance less than zero!");
+    }
+
+    this.checkCredentials(username, password);
+    if (!accountExists(username, accountName)) {
+      throw new IllegalArgumentException(
+          "The account with the following properties does not exist: \n"
+              + "\tBank: " + this.name + "\n"
+              + "\tUsername: " + username + "\n"
+              + "\tAccount Name: " + accountName + "\n"
+      );
+    }
+
+    Map<String, Object> accountRecord = engine.selectOne(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName)
+    );
+    AccountStatus status = (AccountStatus) accountRecord.get("status");
+
+    if (status == AccountStatus.Frozen) {
+      throw new IllegalStateException("Cannot withdraw from a frozen account!");
+    }
+    if (status == AccountStatus.Closed) {
+      throw new IllegalStateException("Cannot withdraw from a closed account!");
+    }
+
+    double originalBal = (double) accountRecord.get("balance");
+    if (amount > originalBal) {
+      throw new IllegalArgumentException(
+          "Insufficient funds in account with following properties: "
+              + "\n\tBank: " + this.name + "\n"
+              + "\tUsername: " + username + "\n"
+              + "\tAccount Name: " + accountName + "\n"
+              + "\tBalance: " + originalBal + "\n"
+              + "\tTried to withdraw: " + amount
+      );
+    }
+
+    this.engine.update(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName),
+        Map.of("balance", originalBal - amount)
+    );
+  }
+
+  @Override
+  public void deposit(
+      String username,
+      String password,
+      String accountName,
+      double amount
+  ) throws IllegalArgumentException {
+    this.depositBalance(username, password, accountName, amount);
+
+    Map<String, Object> depositRecord = this.createTransactionRecord(
+        TransactionType.DEPOSIT, null, username, null, accountName, amount, "Deposit"
+    );
+    this.engine.insert(name, routingNumber, "transactions", depositRecord);
+  }
+
+  private void depositBalance(
+      String username,
+      String password,
+      String accountName,
+      double amount
+  ) {
+    if (amount < 0) {
+     throw new IllegalArgumentException("Cannot deposit a balance less than zero!");
+    }
+
+    this.checkCredentials(username, password);
+    if (!accountExists(username, accountName)) {
+      throw new IllegalArgumentException(
+          "The account with the following properties does not exist: \n"
+              + "\tBank: " + this.name + "\n"
+              + "\tUsername: " + username + "\n"
+              + "\tAccount Name: " + accountName + "\n"
+              + "\tBalance: " + amount + "\n"
+              + "\tTried to deposit: " + amount
+      );
+    }
+
+    Map<String, Object> accountRecord = engine.selectOne(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName)
+    );
+    AccountStatus status = (AccountStatus) accountRecord.get("status");
+    if (status == AccountStatus.Closed) {
+      throw new IllegalStateException("Cannot deposit from a closed account!");
+    }
+    if (status == AccountStatus.Frozen) {
+      throw new IllegalStateException("Cannot deposit from a frozen account!");
+    }
+
+    double originalBal = (double) accountRecord.get("balance");
+    engine.update(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName),
+        Map.of("balance", originalBal + amount)
+    );
+  }
+
+  @Override
+  public Transaction transfer(
+      String fromUserName,
+      String toUserName,
+      String fromPass,
+      String toPass,
+      String fromAccountName,
+      String toAccountName,
+      double amount
+  ) throws IllegalArgumentException {
+    engine.beginTransaction();
+    TransactionType type = fromUserName.equals(toUserName) ?
+        TransactionType.INTERNALTRANSFER : TransactionType.EXTERNALTRANSFER;
+    try {
+      this.withdrawBalance(fromUserName, fromPass, fromAccountName, amount);
+      this.depositBalance(toUserName, toPass, toAccountName, amount);
+      Map<String, Object> transferRecord = this.createTransactionRecord(
+          type, fromUserName, toUserName, fromAccountName, toAccountName, amount, "Transfer"
+      );
+      this.engine.insert(name, routingNumber, "transactions", transferRecord);
+      engine.commitTransaction();
+    } catch (Exception e) {
+      engine.rollbackTransaction();
+      throw new IllegalArgumentException("Transfer Failed: " + e.getMessage(), e);
+    }
+    return new Transaction(fromUserName, toUserName, fromAccountName, toAccountName, amount, type);
+  }
+
+  /**
+   * Creates a new record of a Transaction such that it properly conforms to the structure of the
+   * Transaction table, with respect to the given parameters.
+   * @param type        the kind of transaction being performed.
+   * @param fromUser    the user who is sending the money.
+   * @param toUser      the user who is receiving the money.
+   * @param fromAccount the account who is sending the money under the {@code fromUser}.
+   * @param toAccount   the account who is receiving the money under the {@code toUser}.
+   * @param amount      the amount of money being exchanged in the new Transaction.
+   * @param description the description of the transaction record to be created.
+   * @return The appropriate transaction record such that it conforms to the default transaction
+   *         table provided by the DataEngine.
+   */
+  private Map<String, Object> createTransactionRecord(
+      TransactionType type,
+      String fromUser,
+      String toUser,
+      String fromAccount,
+      String toAccount,
+      double amount,
+      String description
+  ) {
+    Map<String, Object> record = new HashMap<>();
+    record.put("transactionType", type.toString());
+    record.put("fromUser", fromUser);
+    record.put("toUser", toUser);
+    record.put("fromAccount", fromAccount);
+    record.put("toAccount", toAccount);
+    record.put("amount", amount);
+    record.put("bankName", this.name);
+    record.put("routingNumber", this.routingNumber);
+    record.put("description", description);
+    record.put("createdAt", LocalDateTime.now());
+    record.put("status", "COMPLETED");
+    return record;
+  }
+
+  @Override
+  public double getBalance(
+      String username,
+      String password,
+      String accountName
+  ) throws IllegalArgumentException {
+    this.checkCredentials(username, password);
+    if (!accountExists(username, accountName)) {
+      throw new IllegalArgumentException(
+          "The account with the following properties does not exist: \n"
+          + "Bank: " + this.name + "\n"
+          + "\tUsername: " + username + "\n"
+          + "\tAccount Name: " + accountName + "\n"
+      );
+    }
+
+    return (double) this.engine.selectOne(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName)
+    ).get("balance");
+  }
+
+  @Override
+  public User getUser(String username, String password) {
+    this.checkCredentials(username, password);
+    Map<String, Object> userInfo = Map.of(
+        "username", username, "password", password
+    );
+    Map<String, Object> userRecord = this.engine.selectOne(name, routingNumber, "users", userInfo);
+    return new User(
+        username,
+        password,
+        (String) userRecord.get("email"),
+        (LocalDateTime) userRecord.get("createdAt")
+    );
+  }
+
+  @Override
+  public List<BankAccount> getAccountsFor(
+      String username,
+      String password
+  ) throws IllegalArgumentException {
+    this.checkCredentials(username, password);
+    List<Map<String, Object>> accountRecords = this.engine.select(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username)
+    );
+    return accountRecords.stream()
+        .map(record -> new BankAccount(
+            (String) record.get("ownerUsername"),
+            (String) record.get("accountName"),
+            (double) record.get("balance"),
+            (AccountType) record.get("type"),
+            (AccountStatus) record.get("status"),
+            (LocalDateTime) record.get("createdAt")
+        )).toList();
+  }
+
+  @Override
+  public BankAccount getAccountFor(
+      String username, String password, String accountName
+  ) throws IllegalArgumentException {
+    this.checkCredentials(username, password);
+    if (!accountExists(username, accountName)) {
+      throw new IllegalArgumentException(
+          "The account with the following properties does not exist: \n"
+          + "Bank: " + this.name + "\n"
+          + "\tUsername: " + username + "\n"
+          + "\tAccount Name: " + accountName + "\n"
+      );
+    }
+
+    Map<String, Object> accountRecord = this.engine.selectOne(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName)
+    );
+    if (accountRecord == null) {
+      return null;
+    }
+     return new BankAccount(
+         (String) accountRecord.get("ownerUsername"),
+         (String) accountRecord.get("accountName"),
+         (double) accountRecord.get("balance"),
+         (AccountType) accountRecord.get("type"),
+         (AccountStatus) accountRecord.get("status"),
+         (LocalDateTime) accountRecord.get("createdAt")
+    );
+  }
+
+  @Override
+  public boolean accountExists(String username, String accountName) {
+    return engine.exists(
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName)
+    );
+  }
+
+  @Override
+  public boolean userExists(String username, String password) {
+    return this.engine.exists(
+        this.name,
+        this.routingNumber,
+        "users",
+        Map.of("username", username, "password", password)
+    );
+  }
+
+  /**
+   * Is the given credentials a valid user within this Bank?
+   * @param username the username to be checked.
+   * @param password the password to be checked.
+   * @throws IllegalArgumentException if the given username does not exist in this Bank or if the
+   *         given password does not match for the username.
+   */
+  private void checkCredentials(String username, String password) {
+    if (!this.userExists(username, password)) {
+      throw new IllegalArgumentException(
+          "The given user does not exist within " + this.name + ": \n"
+              + "Username: " + username + "\n" + "Password: " + password
+      );
     }
   }
 }

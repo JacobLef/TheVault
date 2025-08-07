@@ -6,11 +6,12 @@ package model.types;
  * to those classes which use this Enumeration.
  */
 public enum AccountStatus {
-  Free, Frozen;
+  Free, Frozen, Closed;
 
   AccountStatus makeStatus(String status) {
     return switch (status.trim()) {
       case "Free" -> Free;
+      case "Closed" -> Closed;
       case "Frozen" -> Frozen;
       default -> throw new IllegalArgumentException("Unknown status " + status);
     };
