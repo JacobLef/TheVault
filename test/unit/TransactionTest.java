@@ -1,205 +1,160 @@
 package unit;
 
 import java.time.LocalDateTime;
-
 import model.user.Transaction;
 import model.types.TransactionType;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * Collection of tests for Transaction objects (record).
  */
 class TransactionTest {
   private Transaction transaction;
+  private LocalDateTime testTime;
 
   @BeforeEach
   void setUp() {
+    testTime = LocalDateTime.of(2025, 1, 1, 0, 0);
     this.transaction = new Transaction(
-        10,
-        5,
-        4,
-        1,
-        2,
+        "fromUser",
+        "toUser",
+        "fromAccount",
+        "toAccount",
         100.0,
-        TransactionType.ExternalTransfer,
-        LocalDateTime.of(2025, 1, 1, 0, 0)
+        TransactionType.EXTERNALTRANSFER,
+        testTime
     );
   }
 
   @Test
   public void gettersReturnCorrectValues() {
-    // Sanity checks : trivial since they are getters, but important in case the Record is later
-    // changed to be an explicitly defined class
-    assertEquals(10, transaction.transactionId());
-    assertEquals(5, transaction.fromUserId());
-    assertEquals(4, transaction.toUserId());
-    assertEquals(1, transaction.fromAccountId());
-    assertEquals(2, transaction.toAccountId());
-    assertEquals(100.0, transaction.amount());
-    assertEquals(TransactionType.ExternalTransfer, transaction.type());
-    assertEquals(LocalDateTime.of(2025, 1, 1, 0, 0), transaction.createdAt());
+    assertEquals("fromUser", transaction.fromUsername());
+    assertEquals("toUser", transaction.toUsername());
+    assertEquals("fromAccount", transaction.fromAccountName());
+    assertEquals("toAccount", transaction.toAccountName());
+    assertEquals(100.0, transaction.amount(), 0.01);
+    assertEquals(TransactionType.EXTERNALTRANSFER, transaction.type());
+    assertEquals(testTime, transaction.createdAt());
   }
 
   @Test
-  public void fromAndToIdCanBeTheSame() {
+  public void fromAndToUsernameCanBeTheSameForInternalTransfer() {
     assertDoesNotThrow(() -> {
       new Transaction(
-          10,
-          5,
-          5,
-          1,
-          2,
+          "sameUser",
+          "sameUser",
+          "checking",
+          "savings",
           100.0,
-          TransactionType.InternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
-      );
-    });
-
-    assertDoesNotThrow(() -> {
-      new Transaction(
-          10,
-          5,
-          5,
-          1,
-          1,
-          100.0,
-          TransactionType.InternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
+          TransactionType.INTERNALTRANSFER,
+          testTime
       );
     });
   }
 
   @Test
   public void nullTimeDefaultsToNow() {
-    assertEquals(
-        LocalDateTime.now(),
-        new Transaction(
-            10,
-            5,
-            5,
-            1,
-            1,
-            100.0,
-            TransactionType.InternalTransfer,
-            null
-        ).createdAt()
+    Transaction txn = new Transaction(
+        "user1",
+        "user2",
+        "account1",
+        "account2",
+        50.0,
+        TransactionType.EXTERNALTRANSFER,
+        null
     );
+
+    assertNotNull(txn.createdAt());
+    assertTrue(txn.createdAt().isAfter(LocalDateTime.now().minusMinutes(1)));
   }
 
   @Test
-  public void mismatchedTransactionTypeOrUserIdsThrowsException() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      new Transaction(
-          10,
-          5,
-          5,
-          1,
-          2,
-          10.70,
-          TransactionType.ExternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
-      );
-    });
+  public void convenienceConstructorSetsCurrentTime() {
+    Transaction txn = new Transaction(
+        "user1",
+        "user2",
+        "account1",
+        "account2",
+        75.0,
+        TransactionType.EXTERNALTRANSFER
+    );
 
+    assertNotNull(txn.createdAt());
+    assertTrue(txn.createdAt().isAfter(LocalDateTime.now().minusMinutes(1)));
+  }
+
+  @Test
+  public void mismatchedTransactionTypeThrowsException() {
     assertThrows(IllegalArgumentException.class, () -> {
       new Transaction(
-          10,
-          5,
-          4,
-          1,
-          3,
+          "sameUser",
+          "sameUser",
+          "account1",
+          "account2",
           100.0,
-          TransactionType.InternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
+          TransactionType.EXTERNALTRANSFER,
+          testTime
+      );
+    });
+
+    assertThrows(IllegalArgumentException.class, () -> {
+      new Transaction(
+          "user1",
+          "user2",
+          "account1",
+          "account2",
+          100.0,
+          TransactionType.INTERNALTRANSFER,
+          testTime
       );
     });
   }
 
   @Test
-  public void negativeIdOrAmountThrowsException() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      new Transaction(
-          10,
-          5,
-          4,
-          1,
-          1,
-          -10.0,
-          TransactionType.ExternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
-      );
-    });
+  public void toStringContainsAllInformation() {
+    String result = transaction.toString();
 
-    assertThrows(IllegalArgumentException.class, () -> {
-      new Transaction(
-          10,
-          5,
-          4,
-          1,
-          -1,
-          10.0,
-          TransactionType.ExternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
-      );
-    });
+    assertTrue(result.contains("fromUser"));
+    assertTrue(result.contains("toUser"));
+    assertTrue(result.contains("fromAccount"));
+    assertTrue(result.contains("toAccount"));
+    assertTrue(result.contains("100.0"));
+    assertTrue(result.contains("EXTERNALTRANSFER"));
+  }
 
-    assertThrows(IllegalArgumentException.class, () -> {
-      new Transaction(
-          10,
-          5,
-          4,
-          -1,
-          1,
-          10.0,
-          TransactionType.ExternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
-      );
-    });
+  @Test
+  public void recordEqualityWorksCorrectly() {
+    Transaction identical = new Transaction(
+        "fromUser",
+        "toUser",
+        "fromAccount",
+        "toAccount",
+        100.0,
+        TransactionType.EXTERNALTRANSFER,
+        testTime
+    );
 
-    assertThrows(IllegalArgumentException.class, () -> {
-      new Transaction(
-          10,
-          4,
-          -4,
-          1,
-          1,
-          10.0,
-          TransactionType.InternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
-      );
-    });
+    Transaction different = new Transaction(
+        "fromUser",
+        "toUser",
+        "fromAccount",
+        "toAccount",
+        200.0,
+        TransactionType.EXTERNALTRANSFER,
+        testTime
+    );
 
-    assertThrows(IllegalArgumentException.class, () -> {
-      new Transaction(
-          10,
-          -5,
-          4,
-          1,
-          1,
-          10.0,
-          TransactionType.ExternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
-      );
-    });
-
-    assertThrows(IllegalArgumentException.class, () -> {
-      new Transaction(
-          -10,
-          5,
-          5,
-          1,
-          1,
-          10.0,
-          TransactionType.InternalTransfer,
-          LocalDateTime.of(2025, 1, 1, 0, 0)
-      );
-    });
-  };
+    assertEquals(transaction, identical);
+    assertNotEquals(transaction, different);
+    assertEquals(transaction.hashCode(), identical.hashCode());
+  }
 }

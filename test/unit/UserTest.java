@@ -1,56 +1,118 @@
 package unit;
 
 import java.time.LocalDateTime;
-
 import model.user.User;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * Collection of tests for User objects (record).
  */
 class UserTest {
   private User user;
+  private LocalDateTime testTime;
 
   @BeforeEach
   void setUp() {
+    testTime = LocalDateTime.of(2025, 1, 1, 0, 0);
     this.user = new User(
-        10,
         "Test User",
         "Test Password",
         "test@gmail.com",
-        LocalDateTime.of(2025, 1, 1, 0, 0));
+        testTime
+    );
   }
 
   @Test
   public void gettersReturnAppropriateValues() {
-    assertEquals(10, this.user.userId());
     assertEquals("Test User", this.user.username());
     assertEquals("Test Password", this.user.password());
     assertEquals("test@gmail.com", this.user.email());
-    assertEquals(LocalDateTime.of(2025, 1, 1, 0, 0), this.user.createdAt());
+    assertEquals(testTime, this.user.createdAt());
   }
 
   @Test
   public void nullFieldsThrowsException() {
     assertThrows(NullPointerException.class, () -> {
-      new User(10, null, "pass", "test@gmail.com", LocalDateTime.of(2025, 1, 1, 0, 0));
+      new User(null, "pass", "test@gmail.com", testTime);
     });
 
     assertThrows(NullPointerException.class, () -> {
-      new User(1, "Test User", null, "test@gmail.com", LocalDateTime.of(2025, 1, 1, 0, 0));
+      new User("Test User", null, "test@gmail.com", testTime);
     });
 
     assertThrows(NullPointerException.class, () -> {
-      new User(1, "Test User", "pass", null, LocalDateTime.of(2025, 1, 1, 0, 0));
+      new User("Test User", "pass", null, testTime);
     });
+  }
 
-    assertThrows(NullPointerException.class, () -> {
-      new User(1, "Test", "pass", "test@gmail.com", null);
-    });
+  @Test
+  public void convenienceConstructorSetsCurrentTime() {
+    User userWithDefaultTime = new User("username", "password", "email@test.com");
+
+    assertNotNull(userWithDefaultTime.createdAt());
+    assertTrue(userWithDefaultTime.createdAt().isAfter(LocalDateTime.now().minusMinutes(1)));
+  }
+
+  @Test
+  public void usernameAndEmailAreTrimmed() {
+    User userWithSpaces = new User(
+        "  spaced username  ",
+        "password",
+        "  spaced@email.com  "
+    );
+
+    assertEquals("spaced username", userWithSpaces.username());
+    assertEquals("spaced@email.com", userWithSpaces.email());
+    assertEquals("password", userWithSpaces.password());
+  }
+
+  @Test
+  public void toStringContainsAllInformation() {
+    String result = user.toString();
+
+    assertTrue(result.contains("Test User"));
+    assertTrue(result.contains("Test Password"));
+    assertTrue(result.contains("test@gmail.com"));
+    assertTrue(result.contains(testTime.toString()));
+  }
+
+  @Test
+  public void customEqualsIgnoresCreatedAt() {
+    User sameUserDifferentTime = new User(
+        "Test User",
+        "Test Password",
+        "test@gmail.com",
+        LocalDateTime.of(2024, 12, 31, 23, 59)
+    );
+
+    User differentUser = new User(
+        "Different User",
+        "Test Password",
+        "test@gmail.com",
+        testTime
+    );
+
+    assertEquals(user, sameUserDifferentTime);
+    assertNotEquals(user, differentUser);
+  }
+
+  @Test
+  public void hashCodeConsistentWithEquals() {
+    User identicalUser = new User(
+        "Test User",
+        "Test Password",
+        "test@gmail.com",
+        LocalDateTime.of(2020, 1, 1, 0, 0)
+    );
+
+    assertEquals(user, identicalUser);
+    assertEquals(user.hashCode(), identicalUser.hashCode());
   }
 }

@@ -122,10 +122,9 @@ public interface Model extends ReadableModel {
    * @param password    The password of the given User.
    * @param accountName The name of the account to deposit money into.
    * @param amount The amount of money which is to be deposited into the given account.
-   * @return The amount of money deposited.
    * @throws IllegalArgumentException if the given account does not exist within this Model.
    */
-  double deposit(
+  void deposit(
       String userName,
       String password,
       String accountName,
