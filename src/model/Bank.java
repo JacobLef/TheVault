@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 /**
  * Serves as the central place to store all the information regarding a certain Bank, which is
  * delimited by its unique name. A Bank offers all functionality that the Model should offer and
- * stores user information within User and associated BankAccount objects.
+ * stores user information within the provided DataEngine.
  *
  * <p>
  *  Bank objects themselves do not store all the information which they are told to store.
