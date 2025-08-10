@@ -1,5 +1,6 @@
 package model;
 
+import model.security.PasswordService;
 import model.types.AccountStatus;
 import model.types.AccountType;
 import model.types.TransactionType;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
  */
 public class Bank implements Managed {
   private final DataEngine engine;
+  private final PasswordService ps;
   private final String name;
   private final int routingNumber;
 
@@ -50,14 +52,24 @@ public class Bank implements Managed {
    * Runtime changes in what DataEngine and thus what backend is used.
    *
    * @param database The database for this Bank to communicate with.
+   * @param ps       The password service for this Bank to encrypt and decrypt passwords with.
    * @param bankName The name of this Bank.
+   * @param routingNumber The routing number associated with this Bank. This can be assumed to be
+   *                     a delimiter between banks as it is a unique identifier.
    * @throws NullPointerException if either of the given parameters are {@code null}.
    */
-  public Bank(DataEngine database, String bankName, int routingNumber) throws NullPointerException {
+  public Bank(
+      DataEngine database,
+      PasswordService ps,
+      String bankName,
+      int routingNumber
+  ) throws NullPointerException {
     Objects.requireNonNull(database);
     Objects.requireNonNull(bankName);
+    Objects.requireNonNull(ps);
 
     this.engine = database;
+    this.ps = ps;
     this.name = bankName;
     this.routingNumber = routingNumber;
   }
@@ -65,10 +77,10 @@ public class Bank implements Managed {
   @Override
   public User createUser(
       String username,
-      String password,
+      String plaintextPass,
       String email
   ) throws IllegalArgumentException, NullPointerException {
-    if (username == null || password == null || email == null) {
+    if (username == null || plaintextPass == null || email == null) {
       throw new NullPointerException("Username, password, and email cannot be null!");
     }
 
@@ -85,29 +97,31 @@ public class Bank implements Managed {
       throw new IllegalArgumentException("Username is already in use: " + username);
     }
 
+    String hashedPassword = ps.encode(plaintextPass);
+
     Map<String, Object> userRecord = Map.of(
         "username", username,
-        "password", password,
+        "password", hashedPassword,
         "email", email
     );
 
     engine.insert(this.name, this.routingNumber, "users", userRecord);
 
-    return new User(username, password, email);
+    return new User(username, hashedPassword, email);
   }
 
   @Override
   public UserLog deleteUser(
       String username,
-      String password
+      String plaintextPass
   ) throws RuntimeException {
-    this.checkCredentials(username, password);
+    this.checkCredentials(username, plaintextPass);
 
     Map<String, Object> userRecord = engine.selectOne(
         this.name,
         this.routingNumber,
         "users",
-        Map.of("username", username, "password", password)
+        Map.of("username", username)
     );
 
     List<Map<String, Object>> accountRecords = engine.select(
@@ -138,9 +152,13 @@ public class Bank implements Managed {
       transactionRecords.addAll(toTransactions);
     }
 
-    this.deleteUserData(username, password, transactionRecords, accountRecords);
+    this.deleteUserData(username, transactionRecords, accountRecords);
 
-    User deletedUser = new User(username, password, (String) userRecord.get("email"));
+    User deletedUser = new User(
+        username,
+        (String) userRecord.get("password"),
+        (String) userRecord.get("email")
+    );
     Map<String, BankAccount> deletedAccounts = accountRecords.stream()
         .collect(Collectors.toMap(
             record -> (String) record.get("accountName"),
@@ -171,11 +189,11 @@ public class Bank implements Managed {
   @Override
   public User updateUser(
       String username,
-      String password,
+      String plaintextPass,
       UserProperty prop,
       String newValue
   ) throws IllegalArgumentException {
-    this.checkCredentials(username, password);
+    this.checkCredentials(username, plaintextPass);
 
     if (newValue == null) {
       throw new NullPointerException("New value cannot be null!");
@@ -191,8 +209,14 @@ public class Bank implements Managed {
       }
     }
 
-    Map<String, Object> userCriteria = Map.of("username", username, "password", password);
-    Map<String, Object> updates = Map.of(prop.toString().toLowerCase(), newValue);
+    Map<String, Object> userCriteria = Map.of("username", username);
+    Map<String, Object> updates;
+
+    if (prop == UserProperty.PASSWORD) {
+      updates = Map.of("password", ps.encode(newValue));
+    } else {
+      updates = Map.of(prop.toString().toLowerCase(), newValue);
+    }
 
     engine.beginTransaction();
     try {
@@ -231,20 +255,23 @@ public class Bank implements Managed {
     }
 
     String updatedUsername = prop == UserProperty.USERNAME ? newValue : username;
-    String updatedPassword = prop == UserProperty.PASSWORD ? newValue : password;
 
     Map<String, Object> updatedUserRecord = engine.selectOne(
         name, routingNumber, "users",
-        Map.of("username", updatedUsername, "password", updatedPassword)
+        Map.of("username", updatedUsername)
     );
 
-    return new User(updatedUsername, updatedPassword, (String) updatedUserRecord.get("email"));
+    return new User(
+        updatedUsername,
+        (String) updatedUserRecord.get("password"),
+        (String) updatedUserRecord.get("email")
+    );
   }
 
   @Override
   public BankAccount createAccount(
       String username,
-      String password,
+      String plaintextPass,
       String accountName,
       AccountType type,
       double... initBalance
@@ -252,15 +279,15 @@ public class Bank implements Managed {
     if (type == null || accountName == null) {
       throw new NullPointerException("Account type and account name must be provided!");
     }
-    this.checkCredentials(username, password);
+    this.checkCredentials(username, plaintextPass);
 
     if (accountExists(username, accountName)) {
       throw new IllegalArgumentException(
           "An account with the following properties already exists: \n"
-          + "\tBank: " + this.name + "\n"
-          + "\tUsername: " + username + "\n"
-          + "\tAccount Name: " + accountName + "\n"
-          + "\tAccount Type: " + type + "\n"
+              + "\tBank: " + this.name + "\n"
+              + "\tUsername: " + username + "\n"
+              + "\tAccount Name: " + accountName + "\n"
+              + "\tAccount Type: " + type + "\n"
       );
     }
 
@@ -283,14 +310,14 @@ public class Bank implements Managed {
   @Override
   public BankAccount deleteAccount(
       String username,
-      String password,
+      String plaintextPass,
       String accountName
   ) throws IllegalArgumentException {
-    this.checkCredentials(username, password);
+    this.checkCredentials(username, plaintextPass);
     if (!accountExists(username, accountName)) {
       throw new IllegalArgumentException(
           "Within bank of name " + name + "The account by the name of " + accountName + " does not "
-          + "exist under the user " + username + "."
+              + "exist under the user " + username + "."
       );
     }
 
@@ -309,8 +336,8 @@ public class Bank implements Managed {
     );
 
     Map<String, Object> updatedAccountRecord = engine.selectOne(
-       name, routingNumber, "accounts",
-       Map.of("ownerUsername", username, "accountName", accountName)
+        name, routingNumber, "accounts",
+        Map.of("ownerUsername", username, "accountName", accountName)
     );
 
     return new BankAccount(
@@ -323,21 +350,8 @@ public class Bank implements Managed {
     );
   }
 
-  /**
-   * Deletes all user data with respect to the given transaction record, such that it no longer
-   * is present in this Bank and can not be fetched again.
-   * @param username            the name of the user whose information is to be deleted.
-   * @param password            the password of the user whose data is to be deleted.
-   * @param transactionRecords  the transaction records from which the information of the
-   *                            *from* user is to be deleted.
-   * @param accountRecords      the account records which are to be deleted.
-   * @implNote it is assumed that the given password is a match for the given username, and that
-   *           the given username exists within the Database.
-   * @throws RuntimeException if there is any error with deleting the user's data.
-   */
   private void deleteUserData(
       String username,
-      String password,
       List<Map<String, Object>> transactionRecords,
       List<Map<String, Object>> accountRecords
   ) throws RuntimeException {
@@ -365,7 +379,7 @@ public class Bank implements Managed {
           this.name,
           this.routingNumber,
           "users",
-          Map.of("username", username, "password", password)
+          Map.of("username", username)
       );
 
       engine.commitTransaction();
@@ -378,11 +392,11 @@ public class Bank implements Managed {
   @Override
   public double withdraw(
       String username,
-      String password,
+      String plaintextPass,
       String accountName,
       double amount
   ) throws IllegalArgumentException, IllegalStateException {
-    this.withdrawBalance(username, password, accountName, amount);
+    this.withdrawBalance(username, plaintextPass, accountName, amount);
 
     Map<String, Object> depositRecord = this.createTransactionRecord(
         TransactionType.WITHDRAWAL, null, username, null, accountName, amount, "Withdraw"
@@ -394,7 +408,7 @@ public class Bank implements Managed {
 
   private void withdrawBalance(
       String username,
-      String password,
+      String plaintextPass,
       String accountName,
       double amount
   ) throws IllegalArgumentException, IllegalStateException {
@@ -402,7 +416,7 @@ public class Bank implements Managed {
       throw new IllegalArgumentException("Cannot withdraw a balance less than zero!");
     }
 
-    this.checkCredentials(username, password);
+    this.checkCredentials(username, plaintextPass);
     if (!accountExists(username, accountName)) {
       throw new IllegalArgumentException(
           "The account with the following properties does not exist: \n"
@@ -447,11 +461,11 @@ public class Bank implements Managed {
   @Override
   public void deposit(
       String username,
-      String password,
+      String plaintextPass,
       String accountName,
       double amount
   ) throws IllegalArgumentException {
-    this.depositBalance(username, password, accountName, amount);
+    this.depositBalance(username, plaintextPass, accountName, amount);
 
     Map<String, Object> depositRecord = this.createTransactionRecord(
         TransactionType.DEPOSIT, null, username, null, accountName, amount, "Deposit"
@@ -461,15 +475,15 @@ public class Bank implements Managed {
 
   private void depositBalance(
       String username,
-      String password,
+      String plaintextPass,
       String accountName,
       double amount
   ) {
     if (amount < 0) {
-     throw new IllegalArgumentException("Cannot deposit a balance less than zero!");
+      throw new IllegalArgumentException("Cannot deposit a balance less than zero!");
     }
 
-    this.checkCredentials(username, password);
+    this.checkCredentials(username, plaintextPass);
     if (!accountExists(username, accountName)) {
       throw new IllegalArgumentException(
           "The account with the following properties does not exist: \n"
@@ -529,19 +543,6 @@ public class Bank implements Managed {
     return new Transaction(fromUserName, toUserName, fromAccountName, toAccountName, amount, type);
   }
 
-  /**
-   * Creates a new record of a Transaction such that it properly conforms to the structure of the
-   * Transaction table, with respect to the given parameters.
-   * @param type        the kind of transaction being performed.
-   * @param fromUser    the user who is sending the money.
-   * @param toUser      the user who is receiving the money.
-   * @param fromAccount the account who is sending the money under the {@code fromUser}.
-   * @param toAccount   the account who is receiving the money under the {@code toUser}.
-   * @param amount      the amount of money being exchanged in the new Transaction.
-   * @param description the description of the transaction record to be created.
-   * @return The appropriate transaction record such that it conforms to the default transaction
-   *         table provided by the DataEngine.
-   */
   private Map<String, Object> createTransactionRecord(
       TransactionType type,
       String fromUser,
@@ -569,16 +570,16 @@ public class Bank implements Managed {
   @Override
   public double getBalance(
       String username,
-      String password,
+      String plaintextPass,
       String accountName
   ) throws IllegalArgumentException {
-    this.checkCredentials(username, password);
+    this.checkCredentials(username, plaintextPass);
     if (!accountExists(username, accountName)) {
       throw new IllegalArgumentException(
           "The account with the following properties does not exist: \n"
-          + "Bank: " + this.name + "\n"
-          + "\tUsername: " + username + "\n"
-          + "\tAccount Name: " + accountName + "\n"
+              + "Bank: " + this.name + "\n"
+              + "\tUsername: " + username + "\n"
+              + "\tAccount Name: " + accountName + "\n"
       );
     }
 
@@ -589,15 +590,15 @@ public class Bank implements Managed {
   }
 
   @Override
-  public User getUser(String username, String password) {
-    this.checkCredentials(username, password);
-    Map<String, Object> userInfo = Map.of(
-        "username", username, "password", password
+  public User getUser(String username, String plaintextPass) {
+    this.checkCredentials(username, plaintextPass);
+    Map<String, Object> userRecord = this.engine.selectOne(
+        name, routingNumber, "users",
+        Map.of("username", username)
     );
-    Map<String, Object> userRecord = this.engine.selectOne(name, routingNumber, "users", userInfo);
     return new User(
         username,
-        password,
+        (String) userRecord.get("password"),
         (String) userRecord.get("email"),
         (LocalDateTime) userRecord.get("createdAt")
     );
@@ -606,9 +607,9 @@ public class Bank implements Managed {
   @Override
   public List<BankAccount> getAccountsFor(
       String username,
-      String password
+      String plaintextPass
   ) throws IllegalArgumentException {
-    this.checkCredentials(username, password);
+    this.checkCredentials(username, plaintextPass);
     List<Map<String, Object>> accountRecords = this.engine.select(
         name, routingNumber, "accounts",
         Map.of("ownerUsername", username)
@@ -626,15 +627,15 @@ public class Bank implements Managed {
 
   @Override
   public BankAccount getAccountFor(
-      String username, String password, String accountName
+      String username, String plaintextPass, String accountName
   ) throws IllegalArgumentException {
-    this.checkCredentials(username, password);
+    this.checkCredentials(username, plaintextPass);
     if (!accountExists(username, accountName)) {
       throw new IllegalArgumentException(
           "The account with the following properties does not exist: \n"
-          + "Bank: " + this.name + "\n"
-          + "\tUsername: " + username + "\n"
-          + "\tAccount Name: " + accountName + "\n"
+              + "Bank: " + this.name + "\n"
+              + "\tUsername: " + username + "\n"
+              + "\tAccount Name: " + accountName + "\n"
       );
     }
 
@@ -645,13 +646,13 @@ public class Bank implements Managed {
     if (accountRecord == null) {
       return null;
     }
-     return new BankAccount(
-         (String) accountRecord.get("ownerUsername"),
-         (String) accountRecord.get("accountName"),
-         (double) accountRecord.get("balance"),
-         (AccountType) accountRecord.get("type"),
-         (AccountStatus) accountRecord.get("status"),
-         (LocalDateTime) accountRecord.get("createdAt")
+    return new BankAccount(
+        (String) accountRecord.get("ownerUsername"),
+        (String) accountRecord.get("accountName"),
+        (double) accountRecord.get("balance"),
+        (AccountType) accountRecord.get("type"),
+        (AccountStatus) accountRecord.get("status"),
+        (LocalDateTime) accountRecord.get("createdAt")
     );
   }
 
@@ -664,27 +665,24 @@ public class Bank implements Managed {
   }
 
   @Override
-  public boolean userExists(String username, String password) {
-    return this.engine.exists(
-        this.name,
-        this.routingNumber,
-        "users",
-        Map.of("username", username, "password", password)
+  public boolean userExists(String username, String plaintextPass) {
+    Map<String, Object> userRecord = this.engine.selectOne(
+        name, routingNumber, "users",
+        Map.of("username", username)
     );
+
+    if (userRecord == null) {
+      return false;
+    }
+
+    String hashedPass = (String) userRecord.get("password");
+    return this.ps.verify(plaintextPass, hashedPass);
   }
 
-  /**
-   * Is the given credentials a valid user within this Bank?
-   * @param username the username to be checked.
-   * @param password the password to be checked.
-   * @throws IllegalArgumentException if the given username does not exist in this Bank or if the
-   *         given password does not match for the username.
-   */
-  private void checkCredentials(String username, String password) {
-    if (!this.userExists(username, password)) {
+  private void checkCredentials(String username, String plaintextPass) {
+    if (!this.userExists(username, plaintextPass)) {
       throw new IllegalArgumentException(
-          "The given user does not exist within " + this.name + ": \n"
-              + "Username: " + username + "\n" + "Password: " + password
+          "Invalid credentials for user: " + username
       );
     }
   }

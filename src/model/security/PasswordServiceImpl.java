@@ -3,8 +3,8 @@ package model.security;
 import org.mindrot.jbcrypt.BCrypt;
 
 /**
- * Specific implementation of a PasswordService that uses the *bcyrpt* library to encrypt and
- * decrypt, and salt the passwords given to it.
+ * Specific implementation of a PasswordService that uses the *bcyrpt* library to encrypt, salt, and
+ * decrypt the passwords given to it.
  */
 public class PasswordServiceImpl implements PasswordService {
   private static final int DEFAULT_COST_FACTOR = 12;
@@ -26,7 +26,7 @@ public class PasswordServiceImpl implements PasswordService {
    */
   public PasswordServiceImpl(int costFactor) throws IllegalArgumentException {
     if (costFactor < 4 || costFactor > 20) {
-      throw new IllegalArgumentException("costFactor must be between 4 and 20");
+      throw new IllegalArgumentException("Cost factor must be between 4 and 20, inclusive.");
     }
 
     this.costFactor = costFactor;
@@ -34,7 +34,15 @@ public class PasswordServiceImpl implements PasswordService {
 
   @Override
   public String encode(String plainText) throws IllegalArgumentException, SecurityException {
-    return "";
+    if (plainText == null) {
+      throw new IllegalArgumentException("Plaintext must not be null.");
+    }
+
+    if (plainText.isEmpty()) {
+      throw new IllegalArgumentException("Plaintext must not be empty.");
+    }
+
+    return BCrypt.hashpw(plainText, BCrypt.gensalt(this.costFactor));
   }
 
   @Override
@@ -42,16 +50,33 @@ public class PasswordServiceImpl implements PasswordService {
       String plainText,
       String encodedPassword
   ) throws IllegalArgumentException, SecurityException {
-    return false;
+    if (plainText == null || encodedPassword == null || encodedPassword.isEmpty()) {
+      throw new IllegalArgumentException("Password and encoded password cannot be null or empty");
+    }
+
+    return BCrypt.checkpw(plainText, encodedPassword);
   }
 
   @Override
   public boolean needsRehash(String encodedPassword) throws IllegalArgumentException {
-    return false;
+    if (encodedPassword == null || encodedPassword.isEmpty()) {
+      throw new IllegalArgumentException("Encoded password cannot be null or empty");
+    }
+
+    String[] parts = encodedPassword.split("\\$");
+    if (parts.length >= 3) {
+      try {
+        int currentCost = Integer.parseInt(parts[2]);
+        return currentCost < this.costFactor;
+      } catch (NumberFormatException e) {
+        return true;
+      }
+    }
+    return true;
   }
 
   @Override
   public String getAlgorithmInfo() {
-    return "";
+    return "BCrypt algorithm with cost factor: " + this.costFactor;
   }
 }
