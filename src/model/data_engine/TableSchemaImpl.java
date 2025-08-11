@@ -3,10 +3,7 @@ package model.data_engine;
 import model.types.DataType;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -59,10 +56,11 @@ public class TableSchemaImpl implements TableSchema {
             Collectors.toMap(ColumnDefinition::name, Function.identity())
         );
 
-    String[] primaryKeyCols = (String[]) this.cols.stream()
+    String[] primaryKeyCols = this.cols
+        .stream()
         .filter(ColumnDefinition::primaryKey)
         .map(ColumnDefinition::name)
-        .toArray();
+        .toArray(String[]::new);
     if (primaryKeyCols.length == 0) {
       throw new IllegalArgumentException("No primary key columns found!");
     }
@@ -73,7 +71,11 @@ public class TableSchemaImpl implements TableSchema {
   }
 
   @Override
-  public boolean isValidRecord(Map<String, Object> record) {
+  public boolean isValidRecord(Map<String, Object> record) throws NullPointerException {
+    if (record == null) {
+      throw new NullPointerException("Cannot have a null record!");
+    }
+
     for (ColumnDefinition col : cols) {
       Object value = record.get(col.name());
 
@@ -90,8 +92,40 @@ public class TableSchemaImpl implements TableSchema {
   }
 
   @Override
-  public ColumnDefinition getColumn(String columnName) {
-    return columnMap.getOrDefault(columnName, null);
+  public List<ColumnDefinition> getColumns() {
+    return cols;
+  }
+
+  @Override
+  public ColumnDefinition getColumn(
+      String columnName
+  ) throws IllegalArgumentException, NullPointerException {
+    if (columnName == null) {
+      throw new NullPointerException("Cannot have a null column name!");
+    }
+    ColumnDefinition col = columnMap.getOrDefault(columnName, null);
+    if (col == null) {
+      throw new IllegalArgumentException("Column '" + columnName + "' not found!");
+    }
+    return col;
+  }
+
+  @Override
+  public ColumnDefinition getPrimaryKeyColumn() throws IllegalStateException {
+    if (primaryKeyColumnName == null || primaryKeyColumnName.isEmpty()) {
+      throw new IllegalStateException("Primary key column name is empty!");
+    }
+    return columnMap.get(primaryKeyColumnName);
+  }
+
+  @Override
+  public String getPrimaryKeyColumnName() {
+    return this.primaryKeyColumnName;
+  }
+
+  @Override
+  public String getTableName() {
+    return this.tableName;
   }
 
   /**
