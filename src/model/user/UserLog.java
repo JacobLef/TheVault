@@ -1,6 +1,10 @@
 package model.user;
 
-import java.util.*;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Serves as a storage for all the information associated with a User, including the information

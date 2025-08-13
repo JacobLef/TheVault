@@ -1,4 +1,4 @@
-package model.data_engine;
+package model.data_engine.table;
 
 import model.types.DataType;
 

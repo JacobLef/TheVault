@@ -1,4 +1,4 @@
-package model.data_engine;
+package model.data_engine.table;
 
 import java.util.List;
 import java.util.Map;

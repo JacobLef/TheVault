@@ -1,8 +1,8 @@
 package unit;
 
-import model.data_engine.ColumnDefinition;
-import model.data_engine.ColumnDefinitionImpl;
-import model.data_engine.TableSchemaImpl;
+import model.data_engine.table.ColumnDefinition;
+import model.data_engine.table.ColumnDefinitionImpl;
+import model.data_engine.table.TableSchemaImpl;
 import model.types.DataType;
 
 import org.junit.jupiter.api.BeforeEach;

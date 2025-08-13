@@ -1,6 +1,6 @@
 package unit;
 
-import model.data_engine.ColumnDefinitionImpl;
+import model.data_engine.table.ColumnDefinitionImpl;
 import model.types.DataType;
 
 import org.junit.jupiter.api.BeforeEach;

@@ -21,7 +21,8 @@ public class Server {
         "Bank One",
         1984
     );
-    View view = new CLIView(model);
+
+    View view = new CLIView(model, System.out);
     Controller controller = new InteractiveController(System.in, model, view);
 
     try {
