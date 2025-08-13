@@ -1,6 +1,6 @@
 package model.data_engine.index;
 
-import model.data_engine.BPlusTree;
+import model.bplustree.BPlusTree;
 
 /**
  * Implementation of Index interface that wraps a B+ Tree with metadata and management

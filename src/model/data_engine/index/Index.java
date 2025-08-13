@@ -1,6 +1,6 @@
 package model.data_engine.index;
 
-import model.data_engine.BPlusTree;
+import model.bplustree.BPlusTree;
 
 /**
  * Wrapper class that encapsulates a B+ Tree index with metadata and management functionality.
