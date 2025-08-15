@@ -49,18 +49,6 @@ public class InternalNode<K extends Comparable<K>, V> extends Node<K, V> {
     return false;
   }
 
-  boolean insertKey(K key, V value) {
-    return false;
-  }
-
-  V removeKey(K key) {
-    return null;
-  }
-
-  K findNextKey(K key) {
-    return null;
-  }
-
   Node<K, V> split() {
     return null;
   }

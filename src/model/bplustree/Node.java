@@ -63,28 +63,6 @@ public abstract class Node<K extends Comparable<K>, V> implements BPlusTree<K, V
   abstract boolean isUnderflow();
 
   /**
-   * Inserts the given (key, value) pair into this Node.
-   * @param key   the key to be inserted.
-   * @param value the value to be inserted.
-   * @return true if the insertion was unique and false if it updated an already present entry.
-   */
-  abstract boolean insertKey(K key, V value);
-
-  /**
-   * Removes the given (key, value) pair from this Node.
-   * @param key the key to be removed.
-   * @return the value associated with the given key.
-   */
-  abstract V removeKey(K key);
-
-  /**
-   * Finds the next key in the sequence after the given key in this Node.
-   * @param key the key whose successor is to be found.
-   * @return the next Key or {@code null} if none.
-   */
-  abstract K findNextKey(K key);
-
-  /**
    * Splits this Node and updates this Node to account for the split. For implementation
    * purposes, this Node will always take the left half of the split and the returned node is
    * always the right half of the split node.
