@@ -1,8 +1,5 @@
 package model.bplustree;
 
-import java.util.Iterator;
-import java.util.Map;
-
 /**
  * An internal node in a B+ tree that contains only keys and child pointers for navigation.
  * Internal nodes guide searches toward the appropriate leaf nodes but store no actual values.
@@ -12,143 +9,292 @@ import java.util.Map;
  * @param <K> The type of the Keys stored in this InternalNode (must be comparable).
  * @param <V> InternalNode's do not store values, so this is ignored for all specification purposes.
  */
-public class InternalNode<K extends Comparable<K>, V> extends Node<K, V> {
-  private Node<K, V>[] children;
+public class InternalNode<K extends Comparable<K>, V> extends NodeImpl<K, V> {
+  private final NodeImpl<K, V>[] children;
 
   /**
-   * Creates a new empty InternalNode with an array of length {@code ORDER} children.
+   * Creates a new empty InternalNode with no children.
    */
   @SuppressWarnings("unchecked")
   public InternalNode() {
     super();
-    this.children = new Node[ORDER];
+    this.children = new NodeImpl[ORDER];
   }
 
   /**
-   * Creates a new InternalNode with the given first child and sets the parent relationship
-   * bidirectionally.
+   * Creates a new InternalNode with the specified first child.
    * @param firstChild the initial child node of this InternalNode.
    */
   @SuppressWarnings("unchecked")
-  public InternalNode(Node<K, V> firstChild) {
+  public InternalNode(NodeImpl<K, V> firstChild) {
     super();
-    this.children = new Node[ORDER];
+    this.children = new NodeImpl[ORDER];
     this.children[0] = firstChild;
     if (firstChild != null) {
       firstChild.parent = this;
     }
   }
 
-  boolean isLeaf() { return false; }
+  @Override
+  public boolean isLeaf() {
+    return false;
+  }
 
+  @Override
   boolean isFull() {
-    return false;
+    return this.keyCount >= MAX_KEYS;
   }
 
+  @Override
   boolean isUnderflow() {
-    return false;
-  }
-
-  Node<K, V> split() {
-    return null;
-  }
-
-  boolean canMergeWith(Node<K, V> other) {
-    return false;
-  }
-
-  void mergeWith(Node<K, V> other) {
-
+    return this.keyCount < MIN_KEYS;
   }
 
   @Override
-  public boolean insert(K key, V value) {
-    return false;
+  SplitResult<K, V> split() {
+    InternalNode<K, V> newInternal = new InternalNode<>();
+    int splitIndex = keyCount / 2;
+    K promotedKey = keys[splitIndex];
+    int moveCount = keyCount - splitIndex - 1;
+
+    for (int i = 0; i < moveCount; i++) {
+      newInternal.keys[i] = this.keys[splitIndex + 1 + i];
+      this.keys[splitIndex + 1 + i] = null;
+    }
+
+    for (int i = 0; i <= moveCount; i++) {
+      newInternal.children[i] = this.children[splitIndex + 1 + i];
+      if (newInternal.children[i] != null) {
+        newInternal.children[i].parent = newInternal;
+      }
+      this.children[splitIndex + 1 + i] = null;
+    }
+
+    newInternal.keyCount = moveCount;
+    this.keys[splitIndex] = null;
+    this.keyCount = splitIndex;
+
+    newInternal.parent = this.parent;
+
+    return new SplitResult<>(newInternal, promotedKey);
   }
 
   @Override
-  public V delete(K key) throws IllegalArgumentException {
-    return null;
+  boolean canMergeWith(NodeImpl<K, V> other) {
+    if (other == null || other.isLeaf()) {
+      return false;
+    }
+
+    InternalNode<K, V> otherInternal = (InternalNode<K, V>) other;
+    return (this.keyCount + otherInternal.keyCount + 1) <= MAX_KEYS;
+  }
+
+  @Override
+  void mergeWith(NodeImpl<K, V> other, K separatorKey) {
+    if (!canMergeWith(other)) {
+      throw new IllegalArgumentException("Cannot merge: combined size exceeds maximum");
+    }
+
+    InternalNode<K, V> otherInternal = (InternalNode<K, V>) other;
+
+    this.keys[this.keyCount] = separatorKey;
+    this.keyCount++;
+
+    for (int i = 0; i < otherInternal.keyCount; i++) {
+      this.keys[this.keyCount + i] = otherInternal.keys[i];
+    }
+
+    for (int i = 0; i <= otherInternal.keyCount; i++) {
+      this.children[this.keyCount + i] = otherInternal.children[i];
+      if (this.children[this.keyCount + i] != null) {
+        this.children[this.keyCount + i].parent = this;
+      }
+    }
+
+    this.keyCount += otherInternal.keyCount;
+
+    otherInternal.clear();
+  }
+
+  @Override
+  void insertKeyAndChild(K key, NodeImpl<K, V> rightChild) {
+    int insertIndex = 0;
+    for (int i = 0; i < keyCount; i++) {
+      if (key.compareTo(keys[i]) < 0) {
+        break;
+      }
+      insertIndex = i + 1;
+    }
+
+    for (int i = keyCount; i > insertIndex; i--) {
+      keys[i] = keys[i - 1];
+      children[i + 1] = children[i];
+    }
+
+    keys[insertIndex] = key;
+    children[insertIndex + 1] = rightChild;
+    if (rightChild != null) {
+      rightChild.parent = this;
+    }
+    keyCount++;
+  }
+
+  @Override
+  K borrowFromLeft(NodeImpl<K, V> leftSibling) {
+    if (leftSibling.isLeaf() || leftSibling.getKeyCount() <= MIN_KEYS) {
+      return null;
+    }
+
+    InternalNode<K, V> leftInternal = (InternalNode<K, V>) leftSibling;
+
+    for (int i = keyCount; i > 0; i--) {
+      keys[i] = keys[i - 1];
+    }
+    for (int i = keyCount + 1; i > 0; i--) {
+      children[i] = children[i - 1];
+    }
+
+    K borrowedKey = leftInternal.keys[leftInternal.keyCount - 1];
+    keys[0] = borrowedKey;
+    children[0] = leftInternal.children[leftInternal.keyCount];
+    if (children[0] != null) {
+      children[0].parent = this;
+    }
+
+    leftInternal.keys[leftInternal.keyCount - 1] = null;
+    leftInternal.children[leftInternal.keyCount] = null;
+    leftInternal.keyCount--;
+    this.keyCount++;
+
+    return borrowedKey;
+  }
+
+  @Override
+  K borrowFromRight(NodeImpl<K, V> rightSibling) {
+    if (rightSibling.isLeaf() || rightSibling.getKeyCount() <= MIN_KEYS) {
+      return null;
+    }
+
+    InternalNode<K, V> rightInternal = (InternalNode<K, V>) rightSibling;
+
+    K borrowedKey = rightInternal.keys[0];
+    keys[keyCount] = borrowedKey;
+    children[keyCount + 1] = rightInternal.children[0];
+    if (children[keyCount + 1] != null) {
+      children[keyCount + 1].parent = this;
+    }
+
+    for (int i = 0; i < rightInternal.keyCount - 1; i++) {
+      rightInternal.keys[i] = rightInternal.keys[i + 1];
+    }
+    for (int i = 0; i < rightInternal.keyCount; i++) {
+      rightInternal.children[i] = rightInternal.children[i + 1];
+    }
+
+    rightInternal.keys[rightInternal.keyCount - 1] = null;
+    rightInternal.children[rightInternal.keyCount] = null;
+
+    rightInternal.keyCount--;
+    this.keyCount++;
+
+    return rightInternal.getMinKey();
+  }
+
+  /**
+   * Finds the appropriate child node for the given key.
+   * @param key the key to find the child for.
+   * @return the child node that should contain the key.
+   */
+  private NodeImpl<K, V> findChild(K key) {
+    int childIndex = 0;
+    for (int i = 0; i < keyCount; i++) {
+      if (key.compareTo(keys[i]) < 0) {
+        break;
+      }
+      childIndex = i + 1;
+    }
+    return children[childIndex];
   }
 
   @Override
   public void clear() {
-
+    for (int i = 0; i < keyCount; i++) {
+      keys[i] = null;
+    }
+    for (int i = 0; i <= keyCount; i++) {
+      if (children[i] != null) {
+        children[i].clear();
+        children[i] = null;
+      }
+    }
+    keyCount = 0;
+    this.parent = null;
   }
 
   @Override
   public V get(K key) {
-    return null;
+    NodeImpl<K, V> child = findChild(key);
+    return child.get(key);
   }
 
   @Override
   public K getMinKey() {
+    if (children[0] != null) {
+      return children[0].getMinKey();
+    }
     return null;
   }
 
   @Override
   public K getMaxKey() {
+    if (children[keyCount] != null) {
+      return children[keyCount].getMaxKey();
+    }
     return null;
   }
 
   @Override
   public int height() {
-    return 0;
+    if (children[0] != null) {
+      return 1 + children[0].height();
+    }
+    return 1;
   }
 
   @Override
   public int size() {
-    return 0;
-  }
-
-  @Override
-  public Map<K, V> rangeQuery(K startKey, K endKey) throws IllegalArgumentException {
-    return Map.of();
-  }
-
-  @Override
-  public Iterator<V> iterator() {
-    return null;
-  }
-
-  @Override
-  public Iterator<K> keyIterator() {
-    return null;
-  }
-
-  @Override
-  public Iterator<Map.Entry<K, V>> entryIterator() {
-    return null;
-  }
-
-  @Override
-  public Iterator<V> rangeIterator(K startKey, K endKey) throws IllegalArgumentException {
-    return null;
+    int totalSize = 0;
+    for (int i = 0; i <= keyCount; i++) {
+      if (children[i] != null) {
+        totalSize += children[i].size();
+      }
+    }
+    return totalSize;
   }
 
   @Override
   public boolean contains(K key) {
-    return false;
+    NodeImpl<K, V> child = findChild(key);
+    return child.contains(key);
   }
 
   /**
-   * Fetches the children of this InternalNode.
-   * @return an Array of the children of this InternalNode.
+   * Gets the children array of this internal node.
+   * @return the array of child nodes.
    */
-  Node<K, V>[] getChildren() { return children; }
+  NodeImpl<K, V>[] getChildren() {
+    return children;
+  }
 
   /**
-   * Sets the child of this InternalNode at the given Index.
-   * @param index the index in the children array to set the given child at.
-   * @param child the child who is now to be stored within this InternalNode.
+   * Sets a child node at the specified index.
+   * @param index the index to set the child at.
+   * @param child the child node to set.
    */
-  void setChild(int index, Node<K, V> child) {
+  void setChild(int index, NodeImpl<K, V> child) {
     children[index] = child;
     if (child != null) {
       child.parent = this;
     }
   }
-
-
-
 }

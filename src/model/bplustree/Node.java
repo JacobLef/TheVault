@@ -1,88 +1,62 @@
 package model.bplustree;
 
 /**
- * Base class for all nodes in a B+ tree, providing common functionality
- * for key storage, parent relationships, and node operations shared by
- * both internal and leaf nodes.
- * @param <K> The type of the Keys stored by this Node.
+ * Interface defining the contract for all nodes in a B+ tree.
+ * Provides essential operations for tree traversal, data access, and structural queries
+ * that are common to both internal and leaf nodes.
+ *
+ * @param <K> The type of the Keys stored by this Node (must be comparable).
  * @param <V> The type of the Values stored by this Node.
  */
-public abstract class Node<K extends Comparable<K>, V> implements BPlusTree<K, V> {
-  protected static final int ORDER = 4;
-  protected static final int MAX_KEYS = ORDER - 1;
-  protected static final int MIN_KEYS = (ORDER + 1) / 2 - 1;
-
-  protected K[] keys;
-  protected int keyCount;
-  protected Node<K, V> parent;
+public interface Node<K extends Comparable<K>, V> {
 
   /**
-   * Creates a new Node with the specified leaf status.
+   * Determines if this Node is a leaf node.
+   * @return {@code true} if this is a leaf node, {@code false} if internal node.
    */
-  @SuppressWarnings("unchecked")
-  protected Node() {
-    this.keys = (K[]) new Comparable[MAX_KEYS];
-    this.keyCount = 0;
-    this.parent = null;
-  }
+  boolean isLeaf();
 
   /**
-   * Fetches the keys of this Node.
-   * @return an Array of all the keys stored in this Node, in ascending order.
+   * Retrieves the value associated with the given key.
+   * @param key the key to search for.
+   * @return the value associated with the key, or {@code null} if not found.
    */
-  K[] getKeys() { return keys; }
+  V get(K key);
 
   /**
-   * Determines the number of keys stored in this Node.
-   * @return the number of keys.
+   * Determines the minimum key stored in this subtree.
+   * @return the minimum key value or {@code null} for an empty subtree.
    */
-  int getKeyCount() { return keyCount; }
+  K getMinKey();
 
   /**
-   * Fetches the parent Node of this Node.
-   * @return the Node corresponding to the parent or {@code null} if no parent exists.
+   * Determines the maximum key stored in this subtree.
+   * @return the maximum key value or {@code null} for an empty subtree.
    */
-  Node<K, V> getParent() { return parent; }
+  K getMaxKey();
 
   /**
-   * Determines if this Node is a Leaf.
-   * @return true if it is and false otherwise.
+   * Calculates the height of this subtree.
+   * @return the height of this subtree, with leaf nodes having height 1.
    */
-  abstract boolean isLeaf();
+  int height();
 
   /**
-   * Determines if this Node has its maximum number of keys already.
-   * @return true if it does and false otherwise.
+   * Counts the total number of key-value pairs stored in this subtree.
+   * @return the total number of entries in this subtree.
    */
-  abstract boolean isFull();
+  int size();
 
   /**
-   * Determines if this Node has too many keys with respect to B+ Tree rules.
-   * @return true if it is and false otherwise.
+   * Determines if the given key exists in this subtree.
+   * @param key the key to search for.
+   * @return {@code true} if the key exists, {@code false} otherwise.
    */
-  abstract boolean isUnderflow();
+  boolean contains(K key);
 
   /**
-   * Splits this Node and updates this Node to account for the split. For implementation
-   * purposes, this Node will always take the left half of the split and the returned node is
-   * always the right half of the split node.
-   * @return the other half of this Node after the split.
+   * Clears all keys, values, and relationships from this Node and its subtree.
+   * Recursively clears all child nodes and resets this node to empty state.
    */
-  abstract Node<K, V> split();
-
-  /**
-   * Determines if this Node can merge with another Node. To be merged, the newly merged Node
-   * must maintain all B+ tree properties regarding the combination of the keys and
-   * children or values (depending on type of Node).
-   * @param other the mode to be tested for merging.
-   * @return true if it can be merged and false otherwise.
-   */
-  abstract boolean canMergeWith(Node<K, V> other);
-
-  /**
-   * Merges this Node with the given Node, such that only one combined Node exists and all values
-   * stored within the given Node are also reflected in this Node.
-   * @param other the node to be merged with this Node.
-   */
-  abstract void mergeWith(Node<K, V> other);
+  void clear();
 }

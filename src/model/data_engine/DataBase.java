@@ -3,7 +3,7 @@ package model.data_engine;
 import jdk.dynalink.Operation;
 import model.Bank;
 import model.bplustree.BPlusTree;
-import model.bplustree.LeafNode;
+import model.bplustree.LeafNodeImpl;
 import model.data_engine.index.Index;
 import model.data_engine.index.IndexImpl;
 import model.data_engine.table.TableSchema;
@@ -51,9 +51,9 @@ public class DataBase implements DataEngine {
    * All tables are initialized to be empty.
    */
   private DataBase() {
-    this.userTable = new LeafNode<>();
-    this.accountTable = new LeafNode<>();
-    this.transactionTable = new LeafNode<>();
+    this.userTable = new LeafNodeImpl<>();
+    this.accountTable = new LeafNodeImpl<>();
+    this.transactionTable = new LeafNodeImpl<>();
 
     this.userNameToId = new HashMap<>();
     this.accountNameToId = new HashMap<>();
@@ -68,12 +68,12 @@ public class DataBase implements DataEngine {
 
     this.userAccountIndex = new IndexImpl<>(
         "user_to_accounts",
-        new LeafNode<Integer, List<Integer>>(),
+        new LeafNodeImpl<Integer, List<Integer>>(),
         false
     );
     this.balanceIndex = new IndexImpl<>(
         "balance_index",
-        new LeafNode<Double, List<Integer>>(),
+        new LeafNodeImpl<Double, List<Integer>>(),
         false
     );
   }

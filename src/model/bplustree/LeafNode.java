@@ -1,11 +1,5 @@
 package model.bplustree;
 
-import java.util.AbstractMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
-
 /**
  * A leaf node in a B+ tree that stores key-value pairs and provides the actual data storage.
  * Leaf nodes are linked together to enable efficient sequential access and range queries.
@@ -14,13 +8,13 @@ import java.util.NoSuchElementException;
  * @param <K> The type of the Keys stored in this LeafNode (must be comparable).
  * @param <V> The type of the Values stored in this LeafNode.
  */
-public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
-  private final V[] values;
+public class LeafNode<K extends Comparable<K>, V> extends NodeImpl<K, V> {
+  private V[] values;
   private LeafNode<K, V> next;
   private LeafNode<K, V> prev;
 
   /**
-   * Creates a new empty LeafNode with {@code null} neighbors.
+   * Creates a new empty LeafNode with no linked neighbors.
    */
   @SuppressWarnings("unchecked")
   public LeafNode() {
@@ -31,7 +25,7 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
   }
 
   /**
-   * Creates a new LeafNode with the specified next node but an {@code null} previous.
+   * Creates a new LeafNode with the specified next node in the linked list.
    * @param next the next leaf node after this LeafNode in the linked list.
    */
   @SuppressWarnings("unchecked")
@@ -45,18 +39,24 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
     }
   }
 
-  boolean isLeaf() { return true; }
+  @Override
+  public boolean isLeaf() {
+    return true;
+  }
 
+  @Override
   boolean isFull() {
     return this.keyCount >= MAX_KEYS;
   }
 
+  @Override
   boolean isUnderflow() {
     return this.keyCount < MIN_KEYS;
   }
 
-  Node<K, V> split() {
-    LeafNode<K, V> newLeaf = new LeafNode<K, V>();
+  @Override
+  SplitResult<K, V> split() {
+    LeafNode<K, V> newLeaf = new LeafNode<>();
     int splitIndex = keyCount / 2;
     int moveCount = keyCount - splitIndex;
 
@@ -76,15 +76,16 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
     if (this.next != null) {
       this.next.prev = newLeaf;
     }
-
     this.next = newLeaf;
 
     newLeaf.parent = this.parent;
 
-    return newLeaf;
+    K promotedKey = newLeaf.keys[0];
+    return new SplitResult<>(newLeaf, promotedKey);
   }
 
-  boolean canMergeWith(Node<K, V> other) {
+  @Override
+  boolean canMergeWith(NodeImpl<K, V> other) {
     if (other == null || !other.isLeaf()) {
       return false;
     }
@@ -93,7 +94,8 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
     return (this.keyCount + otherLeaf.keyCount) <= MAX_KEYS;
   }
 
-  void mergeWith(Node<K, V> other) {
+  @Override
+  void mergeWith(NodeImpl<K, V> other, K separatorKey) {
     if (!canMergeWith(other)) {
       throw new IllegalArgumentException("Cannot merge: combined size exceeds maximum");
     }
@@ -115,7 +117,69 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
   }
 
   @Override
-  public boolean insert(K key, V value) {
+  void insertKeyAndChild(K key, NodeImpl<K, V> rightChild) {
+    throw new UnsupportedOperationException("Leaf nodes do not have children");
+  }
+
+  @Override
+  K borrowFromLeft(NodeImpl<K, V> leftSibling) {
+    if (!leftSibling.isLeaf() || leftSibling.getKeyCount() <= MIN_KEYS) {
+      return null;
+    }
+
+    LeafNode<K, V> leftLeaf = (LeafNode<K, V>) leftSibling;
+
+    for (int i = keyCount; i > 0; i--) {
+      keys[i] = keys[i - 1];
+      values[i] = values[i - 1];
+    }
+
+    keys[0] = leftLeaf.keys[leftLeaf.keyCount - 1];
+    values[0] = leftLeaf.values[leftLeaf.keyCount - 1];
+
+    leftLeaf.keys[leftLeaf.keyCount - 1] = null;
+    leftLeaf.values[leftLeaf.keyCount - 1] = null;
+
+    this.keyCount++;
+    leftLeaf.keyCount--;
+
+    return keys[0];
+  }
+
+  @Override
+  K borrowFromRight(NodeImpl<K, V> rightSibling) {
+    if (!rightSibling.isLeaf() || rightSibling.getKeyCount() <= MIN_KEYS) {
+      return null;
+    }
+
+    LeafNode<K, V> rightLeaf = (LeafNode<K, V>) rightSibling;
+
+    keys[keyCount] = rightLeaf.keys[0];
+    values[keyCount] = rightLeaf.values[0];
+
+    for (int i = 0; i < rightLeaf.keyCount - 1; i++) {
+      rightLeaf.keys[i] = rightLeaf.keys[i + 1];
+      rightLeaf.values[i] = rightLeaf.values[i + 1];
+    }
+
+    rightLeaf.keys[rightLeaf.keyCount - 1] = null;
+    rightLeaf.values[rightLeaf.keyCount - 1] = null;
+
+    this.keyCount++;
+    rightLeaf.keyCount--;
+
+    return rightLeaf.keys[0];
+  }
+
+  /**
+   * Inserts a key-value pair into this leaf node.
+   * Updates the value if the key already exists, otherwise inserts at the appropriate position.
+   * @param key the key to insert.
+   * @param value the value to associate with the key.
+   * @return true if a new key was added, false if an existing key was updated.
+   * @throws IllegalStateException if the node is full and requires splitting.
+   */
+  boolean insertUnique(K key, V value) {
     boolean keyExists = this.contains(key);
     if (keyExists) {
       for (int i = 0; i < keyCount; i++) {
@@ -125,39 +189,28 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
         }
       }
     } else {
-      this.insertUnique(key, value);
+      if (this.isFull()) {
+        throw new IllegalStateException("Cannot insert into full leaf node - split required");
+      }
+
+      int insertIndex = getInsertionIndex(key);
+
+      for (int i = keyCount; i > insertIndex; i--) {
+        keys[i] = keys[i - 1];
+        values[i] = values[i - 1];
+      }
+
+      keys[insertIndex] = key;
+      values[insertIndex] = value;
+      keyCount++;
     }
     return !keyExists;
   }
 
   /**
-   * Inserts the given key into this LeafNode, with the assumption the given key does not appear
-   * in this LeafNode.
-   * @param key    the key to be inserted.
-   * @param value  the value to be inserted.
-   */
-  private void insertUnique(K key, V value) {
-    if (this.isFull()) {
-      throw new IllegalStateException("Cannot insert into full leaf node - split required!");
-    }
-
-    int insertIndex = getInsertionIndex(key);
-
-    for (int i = keyCount; i > insertIndex; i--) {
-      keys[i] = keys[i - 1];
-      values[i] = values[i - 1];
-    }
-
-    keys[insertIndex] = key;
-    values[insertIndex] = value;
-    keyCount++;
-  }
-
-  /**
-   * Finds the index within this LeafNode in which the given value should be inserted, such that
-   * sorted order is maintained (least to greatest).
-   * @param key the key whose value is to be inserted into this LeafNode.
-   * @return the appropriate zeroed index where the given value should be placed.
+   * Finds the appropriate index for inserting a key while maintaining sorted order.
+   * @param key the key to find insertion position for.
+   * @return the index where the key should be inserted.
    */
   private int getInsertionIndex(K key) {
     int targetIndex = 0;
@@ -171,8 +224,13 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
     return targetIndex;
   }
 
-  @Override
-  public V delete(K key) throws IllegalArgumentException {
+  /**
+   * Deletes a key-value pair from this leaf node.
+   * @param key the key to delete.
+   * @return the value that was associated with the deleted key.
+   * @throws IllegalArgumentException if the key is not found.
+   */
+  V deleteKey(K key) throws IllegalArgumentException {
     int index = -1;
     for (int i = 0; i < this.keyCount; i++) {
       if (keys[i].equals(key)) {
@@ -185,7 +243,7 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
       throw new IllegalArgumentException("Key not found: " + key);
     }
 
-    V rv = this.values[index];
+    V deletedValue = this.values[index];
     for (int i = index; i < keyCount - 1; i++) {
       this.values[i] = this.values[i + 1];
       this.keys[i] = this.keys[i + 1];
@@ -195,7 +253,7 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
     values[keyCount - 1] = null;
     keyCount--;
 
-    return rv;
+    return deletedValue;
   }
 
   @Override
@@ -217,7 +275,6 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
         return values[i];
       }
     }
-
     return null;
   }
 
@@ -248,272 +305,47 @@ public class LeafNode<K extends Comparable<K>, V> extends Node<K, V> {
   }
 
   @Override
-  public Map<K, V> rangeQuery(K startKey, K endKey) throws IllegalArgumentException {
-    if (startKey.compareTo(endKey) > 0) {
-      throw new IllegalArgumentException("Start key must be <= end key");
-    }
-
-    Map<K, V> result = new LinkedHashMap<>();
-    LeafNode<K, V> current = this;
-
-    while (current.prev != null && current.getMinKey() != null
-        && startKey.compareTo(current.getMinKey()) < 0) {
-      current = current.prev;
-    }
-
-    while (current != null) {
-      for (int i = 0; i < current.keyCount; i++) {
-        K currentKey = current.keys[i];
-        if (currentKey.compareTo(startKey) >= 0 && currentKey.compareTo(endKey) <= 0) {
-          result.put(currentKey, current.values[i]);
-        } else if (currentKey.compareTo(endKey) > 0) {
-          return result;
-        }
-      }
-      current = current.next;
-    }
-
-    return result;
-  }
-
-  @Override
-  public Iterator<V> iterator() {
-    return new LeafValueIterator();
-  }
-
-  @Override
-  public Iterator<K> keyIterator() {
-    return new LeafKeyIterator();
-  }
-
-  @Override
-  public Iterator<Map.Entry<K, V>> entryIterator() {
-    return new LeafEntryIterator();
-  }
-
-  @Override
-  public Iterator<V> rangeIterator(K startKey, K endKey) throws IllegalArgumentException {
-    if (startKey.compareTo(endKey) > 0) {
-      throw new IllegalArgumentException("Start key must be <= end key");
-    }
-
-    return new LeafRangeIterator(startKey, endKey);
-  }
-
-  @Override
   public boolean contains(K key) {
     return this.get(key) != null;
   }
 
   /**
-   * Provides sequential access to all values stored across the entire B+ Tree in key-sorted order.
-   * Starts from the leftmost leaf node and traverses the linked list of leaves, yielding only the
-   * values without their corresponding keys.
+   * Gets the next leaf node in the linked list.
+   * @return the next leaf node or null if this is the last leaf.
    */
-  private class LeafValueIterator implements Iterator<V> {
-    private LeafNode<K, V> currentLeaf;
-    private int currentIdx;
-
-    public LeafValueIterator() {
-      this.currentLeaf = LeafNode.this;
-      while (currentLeaf.prev != null) {
-        currentLeaf = currentLeaf.prev;
-      }
-
-      currentIdx = 0;
-    }
-
-    @Override
-    public boolean hasNext() {
-      return currentLeaf != null && currentIdx < currentLeaf.keyCount;
-    }
-
-    @Override
-    public V next() {
-      if (!hasNext()) {
-        throw new NoSuchElementException();
-      }
-
-      V val = currentLeaf.values[currentIdx];
-      currentIdx++;
-
-      if (currentIdx >= currentLeaf.keyCount) {
-        currentLeaf = currentLeaf.next;
-        currentIdx = 0;
-      }
-
-      return val;
-    }
+  LeafNode<K, V> getNext() {
+    return next;
   }
 
   /**
-   * Provides sequential access to all keys stored across the entire B+ Tree in ascending sorted
-   * order. Traverse the linked leaf structure from left to right, yielding only the keys without
-   * their values.
+   * Sets the next leaf node in the linked list.
+   * @param next the next leaf node.
    */
-  private class LeafKeyIterator implements Iterator<K> {
-    private LeafNode<K, V> currentLeaf;
-    private int currentIdx;
-
-    public LeafKeyIterator() {
-      this.currentLeaf = LeafNode.this;
-      while (currentLeaf.prev != null) {
-        currentLeaf = currentLeaf.prev;
-      }
-      currentIdx = 0;
-    }
-
-    @Override
-    public boolean hasNext() {
-      return currentLeaf != null && currentIdx < currentLeaf.keyCount;
-    }
-
-    @Override
-    public K next() {
-      if (!hasNext()) {
-        throw new NoSuchElementException();
-      }
-
-      K key = currentLeaf.keys[currentIdx];
-      currentIdx++;
-
-      if (currentIdx >= currentLeaf.keyCount) {
-        currentLeaf = currentLeaf.next;
-        currentIdx = 0;
-      }
-      return key;
-    }
+  void setNext(LeafNode<K, V> next) {
+    this.next = next;
   }
 
   /**
-   * Provides sequential access to all key-value pairs stored across the entire B+ Tree in
-   * key-sorted order.
+   * Gets the previous leaf node in the linked list.
+   * @return the previous leaf node or null if this is the first leaf.
    */
-  private class LeafEntryIterator implements Iterator<Map.Entry<K, V>> {
-    private LeafNode<K, V> currentLeaf;
-    private int currentIdx;
-
-    public LeafEntryIterator() {
-      this.currentLeaf = LeafNode.this;
-      while (currentLeaf.prev != null) {
-        currentLeaf = currentLeaf.prev;
-      }
-      currentIdx = 0;
-    }
-
-    @Override
-    public boolean hasNext() {
-      return currentLeaf != null && currentIdx < currentLeaf.keyCount;
-    }
-
-    @Override
-    public Map.Entry<K, V> next() {
-      if (!hasNext()) {
-        throw new NoSuchElementException();
-      }
-
-      K key = currentLeaf.keys[currentIdx];
-      V val = currentLeaf.values[currentIdx];
-      currentIdx++;
-
-      if (currentIdx >= currentLeaf.keyCount) {
-        currentLeaf = currentLeaf.next;
-        currentIdx = 0;
-      }
-
-      return new AbstractMap.SimpleEntry<>(key, val);
-    }
+  LeafNode<K, V> getPrev() {
+    return prev;
   }
 
   /**
-   * Provides sequential access to values within a specified key range in sorted order. Initially
-   * positions itself at the starting key and stops at the ending key.
+   * Sets the previous leaf node in the linked list.
+   * @param prev the previous leaf node.
    */
-  private class LeafRangeIterator implements Iterator<V> {
-    private LeafNode<K, V> currentLeaf;
-    private int currentIdx;
-    private final K endKey;
-    private boolean exhausted;
-
-    public LeafRangeIterator(K startKey, K endKey) {
-      this.endKey = endKey;
-      this.exhausted = false;
-
-      currentLeaf = LeafNode.this;
-      while (currentLeaf.prev != null && currentLeaf.getMinKey() != null
-          && startKey.compareTo(currentLeaf.getMinKey()) < 0) {
-        currentLeaf = currentLeaf.prev;
-      }
-
-      currentIdx = 0;
-      while (currentIdx < currentLeaf.keyCount &&
-          currentLeaf.keys[currentIdx].compareTo(startKey) < 0) {
-        currentIdx++;
-      }
-
-      if (currentIdx >= currentLeaf.keyCount
-          || currentLeaf.keys[currentIdx].compareTo(endKey) > 0) {
-        exhausted = true;
-      }
-    }
-
-    @Override
-    public boolean hasNext() {
-      return !exhausted && currentLeaf != null && currentIdx < currentLeaf.keyCount
-          && currentLeaf.keys[currentIdx].compareTo(endKey) <= 0;
-    }
-
-    @Override
-    public V next() {
-      if (!hasNext()) {
-        throw new NoSuchElementException();
-      }
-
-      V val = currentLeaf.values[currentIdx];
-      currentIdx++;
-
-      if (currentIdx >= currentLeaf.keyCount) {
-        currentLeaf = currentLeaf.next;
-        currentIdx = 0;
-      }
-
-      if (currentLeaf == null || currentIdx >= currentLeaf.keyCount
-          || currentLeaf.keys[currentIdx].compareTo(endKey) > 0) {
-        exhausted = true;
-      }
-
-      return val;
-    }
+  void setPrev(LeafNode<K, V> prev) {
+    this.prev = prev;
   }
 
   /**
-   * Fetches the next LeafNode after this LeafNode.
-   * @return the LeafNode that comes directly after this LeafNode in the virtual Linked List.
+   * Gets the values array for this leaf node.
+   * @return the array of values stored in this leaf node.
    */
-  LeafNode<K, V> getNext() { return next; }
-
-  /**
-   * Sets the next node of this LeafNode to be the one given.
-   * @param next the new next node of this LeafNode.
-   */
-  void setNext(LeafNode<K, V> next) { this.next = next; }
-
-  /**
-   * Fetches the previous LeafNode that comes before this LeafNode.
-   * @return the LeafNode object that comes directly before this LeafNode in the virtual Linked
-   *         List.
-   */
-  LeafNode<K, V> getPrev() { return prev; }
-
-  /**
-   * Sets the previous node of this LeafNode to be the one given.
-   * @param prev the new previous node of this LeafNode.
-   */
-  void setPrev(LeafNode<K, V> prev) { this.prev = prev; }
-
-  /**
-   * Fetches all the values stored within this LeafNode.
-   * @return an Array of the values stored within this LeafNode.
-   */
-  V[] getValues() { return values; }
+  V[] getValues() {
+    return values;
+  }
 }
