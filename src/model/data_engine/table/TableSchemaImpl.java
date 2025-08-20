@@ -27,18 +27,45 @@ public class TableSchemaImpl implements TableSchema {
       return this;
     }
 
+    /**
+     * Adds a column to this Builder whose properties reflect those given.
+     * @param name The name of the column.
+     * @param type The type of the variable stored within the column.
+     * @param isNullable  Is the added column nullable?
+     * @param isUnique Does the added column have the unique property?
+     * @param isPrimaryKey Is the added column a primary key?
+     * @return this Builder.
+     * @throws IllegalArgumentException if the given name is already present in the columns listed
+     *         within this Builder.
+     */
     public Builder addColumn(
         String name,
         DataType type,
         boolean isNullable,
         boolean isUnique,
         boolean isPrimaryKey
-    ) {
+    ) throws IllegalArgumentException {
+
+      boolean duplicateName = this.cols.stream()
+          .anyMatch(col -> col.name().equals(name));
+      if (duplicateName) {
+        throw new IllegalArgumentException("Duplicate column name: " + name);
+      }
+
       this.cols.add(new ColumnDefinitionImpl(name, type, isNullable, isUnique, isPrimaryKey));
       return this;
     }
 
-    public TableSchemaImpl build() {
+    /**
+     * Constructs a new TableSchemaImpl object whose fields are copies of the fields of this
+     * Builder.
+     * @return the respective TableSchemaImpl object.
+     * @throws NullPointerException if the {@code tableName} of this Builder is {@code null}.
+     */
+    public TableSchemaImpl build() throws NullPointerException {
+      if (this.tableName == null) {
+        throw new NullPointerException("Cannot have a null table name");
+      }
       return new TableSchemaImpl(tableName, cols);
     }
   }

@@ -9,32 +9,32 @@ import java.util.Map;
  * operations with guaranteed logarithmic time complexity for all primary operations.
  *
  * <p>
- * The BPlusTreeImpl maintains the fundamental B+ tree properties of balanced structure where all
- * leaf nodes are at the same level ensuring consistent performance, ordered storage where keys are
- * maintained in sorted order for efficient range queries, sequential access where leaf nodes are
- * linked for fast sequential traversal, and high fanout where internal nodes have multiple children
- * to minimize tree height.
+ *  The BPlusTreeImpl maintains the fundamental B+ tree properties of balanced structure where all
+ *  leaf nodes are at the same level ensuring consistent performance, ordered storage where keys are
+ *  maintained in sorted order for efficient range queries, sequential access where leaf nodes are
+ *  linked for fast sequential traversal, and high fanout where internal nodes have multiple children
+ *  to minimize tree height.
  * </p>
  *
  * <p>
- * Performance Characteristics include Search at O(log n) for efficient key lookup, Insert at
- * O(log n) maintaining balance through node splitting, Delete at O(log n) preserving balance
- * through redistribution and merging, Range Query at O(log n + k) where k is the number of
- * results, and sequential Scan at O(k) with direct leaf-to-leaf traversal.
+ *  Performance Characteristics include Search at O(log n) for efficient key lookup, Insert at
+ *  O(log n) maintaining balance through node splitting, Delete at O(log n) preserving balance
+ *  through redistribution and merging, Range Query at O(log n + k) where k is the number of
+ *  results, and sequential Scan at O(k) with direct leaf-to-leaf traversal.
  * </p>
  *
  * <p>
- * This implementation utilizes a segregated node interface hierarchy with separate LeafNode and
- * InternalNode interfaces to provide type-safe operations and prevent inappropriate method calls at
- * the node level. The BPlusTree interface itself provides the high-level tree operations while
- * delegating to the appropriate node implementations. The tree automatically handles re-balancing
- * operations to maintain optimal performance as data is inserted and deleted.
+ *  This implementation utilizes a segregated node interface hierarchy with separate LeafNode and
+ *  InternalNode interfaces to provide type-safe operations and prevent inappropriate method calls at
+ *  the node level. The BPlusTree interface itself provides the high-level tree operations while
+ *  delegating to the appropriate node implementations. The tree automatically handles re-balancing
+ *  operations to maintain optimal performance as data is inserted and deleted.
  * </p>
  *
  * <p>
- * Thread Safety: This implementation is not inherently thread-safe. For concurrent access
- * in banking applications, external synchronization or concurrent wrapper implementations
- * should be used.
+ *  Thread Safety: This implementation is not inherently thread-safe. For concurrent access
+ *  in banking applications, external synchronization or concurrent wrapper implementations
+ *  should be used.
  * </p>
  *
  * @param <K> The type of keys stored in the tree (must implement Comparable)
@@ -46,9 +46,14 @@ import java.util.Map;
  * @see Node Base interface for common node operations
  */
 public class BPlusTreeImpl<K extends Comparable<K>, V> implements BPlusTree<K,V> {
+  private Node<K, V> root;
 
+  /**
+   * Constructs a new BPlusTreeImpl with an {@code LeafNodeImpl} as the root, which has no left or
+   * right neighbors and other default constructor values.
+   */
   public BPlusTreeImpl() {
-
+    this.root = new LeafNodeImpl<>();
   }
 
   @Override
@@ -63,32 +68,32 @@ public class BPlusTreeImpl<K extends Comparable<K>, V> implements BPlusTree<K,V>
 
   @Override
   public void clear() {
-
+    this.root.clear();
   }
 
   @Override
   public V get(K key) {
-    return null;
+    return this.root.get(key);
   }
 
   @Override
   public K getMinKey() {
-    return null;
+    return this.root.getMinKey();
   }
 
   @Override
   public K getMaxKey() {
-    return null;
+    return this.root.getMaxKey();
   }
 
   @Override
   public int height() {
-    return 0;
+    return this.root.height();
   }
 
   @Override
   public int size() {
-    return 0;
+    return this.root.size();
   }
 
   @Override
@@ -118,6 +123,6 @@ public class BPlusTreeImpl<K extends Comparable<K>, V> implements BPlusTree<K,V>
 
   @Override
   public boolean contains(K key) {
-    return false;
+    return this.root.contains(key);
   }
 }

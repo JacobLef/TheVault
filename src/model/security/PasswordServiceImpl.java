@@ -54,7 +54,11 @@ public class PasswordServiceImpl implements PasswordService {
       throw new IllegalArgumentException("Password and encoded password cannot be null or empty");
     }
 
-    return BCrypt.checkpw(plainText, encodedPassword);
+    try {
+      return BCrypt.checkpw(plainText, encodedPassword);
+    } catch (IllegalArgumentException ignored) {
+      return false;
+    }
   }
 
   @Override
@@ -67,6 +71,9 @@ public class PasswordServiceImpl implements PasswordService {
     if (parts.length >= 3) {
       try {
         int currentCost = Integer.parseInt(parts[2]);
+        if (currentCost < 4 || currentCost > 20) {
+          return true;
+        }
         return currentCost < this.costFactor;
       } catch (NumberFormatException e) {
         return true;

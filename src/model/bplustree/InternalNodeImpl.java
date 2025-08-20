@@ -91,6 +91,7 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
     InternalNodeImpl<K, V> otherInternal = (InternalNodeImpl<K, V>) other;
 
     this.keys[this.keyCount] = separatorKey;
+    int oldKeyCount = this.keyCount;
     this.keyCount++;
 
     if (otherInternal.keyCount >= 0) {
@@ -104,14 +105,13 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
     }
 
     for (int i = 0; i <= otherInternal.keyCount; i++) {
-      this.children[this.keyCount + i] = otherInternal.children[i];
-      if (this.children[this.keyCount + i] != null) {
-        this.children[this.keyCount + i].setParent(this);
+      this.children[oldKeyCount + 1 + i] = otherInternal.children[i];
+      if (otherInternal.children[i] != null) {
+        otherInternal.children[i].setParent(this);
       }
     }
 
     this.keyCount += otherInternal.keyCount;
-
     otherInternal.clear();
   }
 
@@ -233,7 +233,7 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
   @Override
   public V get(K key) {
     Node<K, V> child = findChild(key);
-    return child.get(key);
+    return child == null ? null : child.get(key);
   }
 
   @Override
@@ -274,7 +274,7 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
   @Override
   public boolean contains(K key) {
     Node<K, V> child = findChild(key);
-    return child.contains(key);
+    return child != null && child.contains(key);
   }
 
   @Override
@@ -284,7 +284,7 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
 
   @Override
   public void setChild(int index, Node<K, V> child) {
-    children[index] = child;
+    this.children[index] = child;
     if (child != null) {
       child.setParent(this);
     }

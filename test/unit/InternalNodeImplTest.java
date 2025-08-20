@@ -66,9 +66,10 @@ public class InternalNodeImplTest {
     internalNode.setChild(0, leftChild);
 
     internalNode.insertKeyAndChild(15, middleChild);
+    Comparable<Integer>[] keys = internalNode.getKeys();
 
     assertEquals(1, internalNode.getKeyCount());
-    assertEquals(Integer.valueOf(15), internalNode.getKeys()[0]);
+    assertEquals(15, keys[0]);
     assertEquals(leftChild, internalNode.getChildren()[0]);
     assertEquals(middleChild, internalNode.getChildren()[1]);
     assertEquals(internalNode, middleChild.getParent());
@@ -82,9 +83,9 @@ public class InternalNodeImplTest {
     internalNode.insertKeyAndChild(15, middleChild);
 
     assertEquals(2, internalNode.getKeyCount());
-    Integer[] keys = internalNode.getKeys();
-    assertEquals(Integer.valueOf(15), keys[0]);
-    assertEquals(Integer.valueOf(20), keys[1]);
+    Comparable<Integer>[] keys = internalNode.getKeys();
+    assertEquals(15, keys[0]);
+    assertEquals(20, keys[1]);
 
     assertEquals(leftChild, internalNode.getChildren()[0]);
     assertEquals(middleChild, internalNode.getChildren()[1]);
@@ -186,13 +187,15 @@ public class InternalNodeImplTest {
     InternalNode<Integer, String> newInternal = (InternalNode<Integer, String>) result.newNode();
     Integer promotedKey = result.promotedKey();
 
-    assertEquals(Integer.valueOf(20), promotedKey);
+    assertEquals(20, promotedKey);
 
+    Comparable<Integer>[] internalKeys = internalNode.getKeys();
+    Comparable<Integer>[] newInternalKeys = newInternal.getKeys();
     assertEquals(1, internalNode.getKeyCount());
-    assertEquals(Integer.valueOf(15), internalNode.getKeys()[0]);
+    assertEquals(15, internalKeys[0]);
 
     assertEquals(1, newInternal.getKeyCount());
-    assertEquals(Integer.valueOf(25), newInternal.getKeys()[0]);
+    assertEquals(25, newInternalKeys[0]);
 
     for (int i = 0; i <= newInternal.getKeyCount(); i++) {
       if (newInternal.getChildren()[i] != null) {
@@ -249,12 +252,13 @@ public class InternalNodeImplTest {
 
     otherInternal.setChild(0, rightChild);
 
-    Integer separatorKey = 18;
+    int separatorKey = 18;
     internalNode.mergeWith(otherInternal, separatorKey);
+    Comparable<Integer>[] internalKeys = internalNode.getKeys();
 
     assertEquals(2, internalNode.getKeyCount());
-    assertEquals(Integer.valueOf(15), internalNode.getKeys()[0]);
-    assertEquals(Integer.valueOf(18), internalNode.getKeys()[1]);
+    assertEquals(15, internalKeys[0]);
+    assertEquals(18, internalKeys[1]);
 
     assertEquals(leftChild, internalNode.getChildren()[0]);
     assertEquals(middleChild, internalNode.getChildren()[1]);
@@ -280,7 +284,7 @@ public class InternalNodeImplTest {
 
     Integer borrowedKey = internalNode.borrowFromLeft(leftSibling);
 
-    assertEquals(Integer.valueOf(15), borrowedKey);
+    assertEquals(15, borrowedKey);
     assertEquals(2, internalNode.getKeyCount());
     assertEquals(1, leftSibling.getKeyCount());
 

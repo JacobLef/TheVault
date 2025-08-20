@@ -7,10 +7,6 @@ import java.util.Map;
  * Provides functionality for efficient account lookups, range queries for balance reporting,
  * and ordered iteration through account records. All primary operations
  * maintain O(log n) time complexity for optimal performance.
- *
- * @param <K> The type of the Keys stored by this BPlusTree.
- * @param <V> The type of the Values stored by this BPlusTree.
- *
  * <p>
  *  The following are features that any BPlusTree must adhere to:
  *    - Keys are maintained in ascending order throughout the tree
@@ -23,6 +19,9 @@ import java.util.Map;
  *    - The root can have >= 2 children pointers and at least one key
  *    - All non-root nodes must be at least half-way filled before a new node can be made
  * </p>
+ *
+ * @param <K> The type of the Keys stored by this BPlusTree.
+ * @param <V> The type of the Values stored by this BPlusTree.
  */
 public interface BPlusTree<K extends Comparable<K>, V> {
   /**

@@ -1,5 +1,7 @@
 package model.bplustree;
 
+import java.util.Arrays;
+
 /**
  * A leaf node in a B+ tree that stores key-value pairs and provides the actual data storage.
  * Leaf nodes are linked together to enable efficient sequential access and range queries.
@@ -333,6 +335,6 @@ public class LeafNodeImpl<K extends Comparable<K>, V>
 
   @Override
   public V[] getValues() {
-    return values;
+    return Arrays.copyOf(values, this.keyCount);
   }
 }

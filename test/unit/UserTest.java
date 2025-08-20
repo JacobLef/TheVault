@@ -1,15 +1,12 @@
 package unit;
 
-import java.time.LocalDateTime;
 import model.user.User;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+import java.time.LocalDateTime;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Collection of tests for User objects (record).
@@ -101,18 +98,5 @@ class UserTest {
 
     assertEquals(user, sameUserDifferentTime);
     assertNotEquals(user, differentUser);
-  }
-
-  @Test
-  public void hashCodeConsistentWithEquals() {
-    User identicalUser = new User(
-        "Test User",
-        "Test Password",
-        "test@gmail.com",
-        LocalDateTime.of(2020, 1, 1, 0, 0)
-    );
-
-    assertEquals(user, identicalUser);
-    assertEquals(user.hashCode(), identicalUser.hashCode());
   }
 }

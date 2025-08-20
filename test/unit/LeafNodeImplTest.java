@@ -89,10 +89,10 @@ public class LeafNodeImplTest {
     leafNode.insertUnique(10, "ten");
     leafNode.insertUnique(20, "twenty");
 
-    Integer[] keys = leafNode.getKeys();
-    assertEquals(Integer.valueOf(10), keys[0]);
-    assertEquals(Integer.valueOf(20), keys[1]);
-    assertEquals(Integer.valueOf(30), keys[2]);
+    Comparable<Integer>[] keys = leafNode.getKeys();
+    assertEquals(10, keys[0]);
+    assertEquals(20, keys[1]);
+    assertEquals(30, keys[2]);
   }
 
   @Test
@@ -378,7 +378,7 @@ public class LeafNodeImplTest {
     leafNode.insertUnique(10, "ten");
     leafNode.insertUnique(20, "twenty");
 
-    String[] values = leafNode.getValues();
+    Object[] values = leafNode.getValues();
     assertNotNull(values);
     assertEquals("ten", values[0]);
     assertEquals("twenty", values[1]);
@@ -398,7 +398,7 @@ public class LeafNodeImplTest {
     assertEquals(nextLeaf, leafNode.getNext());
     assertEquals(leafNode, nextLeaf.getPrev());
 
-    String[] values = leafNode.getValues();
+    Object[] values = leafNode.getValues();
     assertEquals("ten", values[0]);
     assertEquals("twenty", values[1]);
   }

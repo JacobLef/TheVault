@@ -440,16 +440,14 @@ class TableSchemaImplTest {
   }
 
   @Test
-  public void builderWithDuplicateColumnNamesOverwritesPrevious() {
-    TableSchemaImpl schemaWithDuplicate = new TableSchemaImpl.Builder()
-        .tableName("test")
-        .addColumn("duplicate", DataType.STRING, false, false, false)
-        .addColumn("duplicate", DataType.INTEGER, false, false, true)
-        .build();
-
-    ColumnDefinition column = schemaWithDuplicate.getColumn("duplicate");
-    assertEquals(DataType.INTEGER, column.type());
-    assertTrue(column.primaryKey());
+  public void builderWithDuplicateColumnNamesThrowsException() {
+    assertThrows(IllegalArgumentException.class, () -> {
+          new TableSchemaImpl.Builder()
+              .tableName("test")
+              .addColumn("duplicate", DataType.STRING, false, false, false)
+              .addColumn("duplicate", DataType.INTEGER, false, false, true)
+              .build();
+    });
   }
 
   @Test
