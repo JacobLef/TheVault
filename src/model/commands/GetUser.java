@@ -2,7 +2,10 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.user.User;
 import model.validation.validator.InputValidator;
+
+import java.util.Map;
 
 /**
  * Represents the ability to fetch the information associated with a given user, so long as the
@@ -29,6 +32,11 @@ public class GetUser extends GenericCommand {
 
   @Override
   public CmdResult execute() {
-
+    Map<String, String> flags = this.flags();
+    User user = this.model.getUser(flags.get("username"), flags.get("password"));
+    if (user == null) {
+      return this.emptyResult();
+    }
+    return this.filledResult(User.class, user);
   }
 }

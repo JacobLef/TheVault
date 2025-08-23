@@ -2,7 +2,10 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.user.User;
 import model.validation.validator.InputValidator;
+
+import java.util.Map;
 
 /**
  * Represents an encapsulation of the data and functionality needed to create a new, unique User
@@ -29,6 +32,12 @@ public class CreateUser extends GenericCommand {
 
   @Override
   public CmdResult execute() {
-
+    Map<String, String> flags = this.flags();
+    User user = this.model.createUser(
+        flags.get("username"),
+        flags.get("password"),
+        flags.get("email")
+    );
+    return this.filledResult(User.class, user);
   }
 }

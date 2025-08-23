@@ -1,7 +1,10 @@
 package model.commands;
 
 import model.Model;
+import model.commandresult.CmdResult;
 import model.validation.validator.InputValidator;
+
+import java.util.Map;
 
 /**
  * Represents the ability to withdraw from a specified account under a specified user, so long as
@@ -27,7 +30,14 @@ public class Withdraw extends GenericCommand {
   }
 
   @Override
-  public void execute() {
-
+  public CmdResult execute() {
+    Map<String, String> flags = this.flags();
+    double withdrawn = this.model.withdraw(
+        flags.get("username"),
+        flags.get("password"),
+        flags.get("accountName"),
+        Double.parseDouble(flags.getOrDefault("amount", "0"))
+    );
+    return this.filledResult(Double.class, withdrawn);
   }
 }

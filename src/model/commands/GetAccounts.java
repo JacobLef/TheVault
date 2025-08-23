@@ -2,7 +2,11 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.user.BankAccount;
 import model.validation.validator.InputValidator;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the ability to fetch all information with regard to all accounts under a specified
@@ -29,6 +33,11 @@ public class GetAccounts extends GenericCommand{
 
   @Override
   public CmdResult execute() {
-
+    Map<String, String> flags = this.flags();
+    List<BankAccount> accList = this.model.getAccountsFor(
+        flags.get("username"),
+        flags.get("password")
+    );
+    return this.filledResult(accList.getClass(), accList);
   }
 }

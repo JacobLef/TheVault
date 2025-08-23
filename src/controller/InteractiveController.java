@@ -40,7 +40,7 @@ public class InteractiveController implements Controller {
     Scanner scanner = new Scanner(in);
     while (scanner.hasNextLine()) {
       String line = scanner.nextLine();
-      String[] split = line.split("\\s");
+      String[] split = line.split("\\s+");
       try {
         if (split[0].trim().equalsIgnoreCase("exit")) {
           this.view.displayMessage(

@@ -2,7 +2,10 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.user.BankAccount;
 import model.validation.validator.InputValidator;
+
+import java.util.Map;
 
 /**
  * Represents functionality to delete an account under a specified user, so long as that account
@@ -29,6 +32,12 @@ public class DeleteAccount extends GenericCommand {
 
   @Override
   public CmdResult execute() {
-
+    Map<String, String> flags = this.flags();
+    BankAccount bc = this.model.deleteAccount(
+        flags.get("username"),
+        flags.get("password"),
+        flags.get("accountName")
+    );
+    return this.filledResult(BankAccount.class, bc);
   }
 }

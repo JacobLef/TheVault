@@ -2,7 +2,11 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.UserProperty;
+import model.user.User;
 import model.validation.validator.InputValidator;
+
+import java.util.Map;
 
 /**
  * Represents the ability to update one of the properties (username, email, password) of a
@@ -28,6 +32,13 @@ public class UpdateUser extends GenericCommand {
 
   @Override
   public CmdResult execute() {
-
+    Map<String, String> flags = this.flags();
+    User user = this.model.updateUser(
+        flags.get("username"),
+        flags.get("password"),
+        UserProperty.valueOf(flags.get("property")),
+        flags.get("value")
+    );
+    return this.filledResult(User.class, user);
   }
 }

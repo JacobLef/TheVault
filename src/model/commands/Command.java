@@ -19,6 +19,7 @@ import model.commandresult.CmdResult;
  * </p>
  *
  */
+@FunctionalInterface
 public interface Command {
   /**
    * Execute this Command such that the Model now reflects the changes requested by this Commands

@@ -1,7 +1,10 @@
 package model.commands;
 
 import model.Model;
+import model.commandresult.CmdResult;
 import model.validation.validator.InputValidator;
+
+import java.util.Map;
 
 /**
  * Represents the ability to check whether a specified user exists in the given Model. UserExists
@@ -26,7 +29,9 @@ public class UserExists extends GenericCommand {
   }
 
   @Override
-  public void execute() {
-
+  public CmdResult execute() {
+    Map<String, String> flags = this.flags();
+    boolean exists = this.model.userExists(flags.get("username"), flags.get("password"));
+    return this.filledResult(Boolean.class, exists);
   }
 }

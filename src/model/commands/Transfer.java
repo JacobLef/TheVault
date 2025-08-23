@@ -2,7 +2,10 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.user.Transaction;
 import model.validation.validator.InputValidator;
+
+import java.util.Map;
 
 /**
  * Represents the ability to Transfer information from one account to another account, either
@@ -29,6 +32,16 @@ public class Transfer extends GenericCommand {
 
   @Override
   public CmdResult execute() {
-
+    Map<String, String> flags = this.flags();
+    Transaction transaction = this.model.transfer(
+        flags.get("fromUsername"),
+        flags.get("toUsername"),
+        flags.get("fromPassword"),
+        flags.get("toPassword"),
+        flags.get("fromAccountName"),
+        flags.get("toAccountName"),
+        Double.parseDouble(flags.getOrDefault("amount", "0"))
+    );
+    return this.filledResult(Transaction.class, transaction);
   }
 }

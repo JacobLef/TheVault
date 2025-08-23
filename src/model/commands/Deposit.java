@@ -4,6 +4,8 @@ import model.Model;
 import model.commandresult.CmdResult;
 import model.validation.validator.InputValidator;
 
+import java.util.Map;
+
 /**
  * Represents the ability to deposit money into a specified account under a specified user, so
  * long as the account exists under the given user and that the user actually exists within the
@@ -29,6 +31,13 @@ public class Deposit extends GenericCommand {
 
   @Override
   public CmdResult execute() {
-
+    Map<String, String> flags = this.flags();
+    this.model.deposit(
+        flags.get("username"),
+        flags.get("password"),
+        flags.get("accountName"),
+        Double.parseDouble(flags.getOrDefault("amount", "0"))
+    );
+    return this.emptyResult();
   }
 }

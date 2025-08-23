@@ -2,7 +2,10 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.user.UserLog;
 import model.validation.validator.InputValidator;
+
+import java.util.Map;
 
 /**
  * Represents the ability to delete a specified user from the Model with which this DeleteUser
@@ -29,6 +32,11 @@ public class DeleteUser extends GenericCommand {
 
   @Override
   public CmdResult execute() {
-
+    Map<String, String> flags = this.flags();
+    UserLog log = this.model.deleteUser(
+        flags.get("username"),
+        flags.get("password")
+    );
+    return this.filledResult(UserLog.class, log);
   }
 }

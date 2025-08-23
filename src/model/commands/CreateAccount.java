@@ -2,7 +2,11 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.AccountType;
+import model.user.BankAccount;
 import model.validation.validator.InputValidator;
+
+import java.util.Map;
 
 /**
  * Offers functionality to Create an account under a specified user, so long as there are no
@@ -20,8 +24,8 @@ public class CreateAccount extends GenericCommand {
    * @param input The input from the user to be parsed, validated, deconstructed, and passed to
    *              the given model for further functionality.
    * @param iv    The respective input validator for this GenericCommand. It is reliant upon the
-   *    *         user for the InputValidator and the respective Command to match as this will not
-   *    *         be cross-checked.
+   *              user for the InputValidator and the respective Command to match as this will not
+   *              be cross-checked.
    */
   protected CreateAccount(Model m, String[] input, InputValidator iv) {
     super(m, input, iv);
@@ -29,6 +33,14 @@ public class CreateAccount extends GenericCommand {
 
   @Override
   public CmdResult execute() {
-
+    Map<String, String> flags = this.flags();
+    BankAccount bc = this.model.createAccount(
+        flags.get("username"),
+        flags.get("password"),
+        flags.get("accountName"),
+        AccountType.valueOf(flags.get("accountType")),
+        Double.parseDouble(flags.getOrDefault("balance", "0"))
+    );
+    return this.filledResult(BankAccount.class, bc);
   }
 }
