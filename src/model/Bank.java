@@ -679,6 +679,11 @@ public class Bank implements Managed {
     return this.ps.verify(plaintextPass, hashedPass);
   }
 
+  @Override
+  public Managed getCurrentlyActiveBank() {
+    return this;
+  }
+
   private void checkCredentials(String username, String plaintextPass) {
     if (!this.userExists(username, plaintextPass)) {
       throw new IllegalArgumentException(
