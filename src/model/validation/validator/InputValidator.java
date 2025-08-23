@@ -4,9 +4,9 @@ import model.validation.result.ValidationResult;
 
 /**
  * Offers functionality to validate the input that has been provided to it, with the presumption
- * that the given input is with respect to a valid command that this program offers. All inputs
- * are going to be in the form of a String, as the input passed to an InputValidator will always
- * be user input (in the form of a String).
+ * that the given input is correct with respect to a valid command that this program offers. All
+ * inputs are going to be in the form of a String, as the input passed to an InputValidator will
+ * always be user input.
  *
  */
 public interface InputValidator {
