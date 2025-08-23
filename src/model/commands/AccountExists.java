@@ -1,5 +1,6 @@
 package model.commands;
 
+import model.commandresult.CmdResult;
 import model.validation.validator.InputValidator;
 import model.Model;
 
@@ -24,7 +25,19 @@ public class AccountExists extends GenericCommand {
   }
 
   @Override
-  public void execute() {
+  public CmdResult execute() {
+    /*
+     * Layout:
+     * - Assume valid inputs
+     * - Can deconstruct the inputs stored within this AccountExists objects however we like, so
+     * long as it agrees with the way it was decomposed within the respective InputValidator.
+     * Since the way commands are inputted is unanimous across the entire program, this should
+     * not be an issue to line up.
+     * - Call the respective method on the provided Model with the respective parameters.
+     * MUST CHANGE THE RETURN TYPE TO BE A RESULT TYPE THAT IS A BUILDER OBJECT WHICH WRAPS THE
+     * ABILITY TO HAVE A RESULTING RETURN TYPE, WHERE YOU CAN CUSTOMIZE IT RELATIVE TO IF THE
+     * OPERATION IS A FETCHING OPERATION OR IF IT IS SIMPLY AN EXECUABLE OPERATION
+     */
     return;
   }
 }

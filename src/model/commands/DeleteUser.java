@@ -1,6 +1,7 @@
 package model.commands;
 
 import model.Model;
+import model.commandresult.CmdResult;
 import model.validation.validator.InputValidator;
 
 /**
@@ -27,7 +28,7 @@ public class DeleteUser extends GenericCommand {
   }
 
   @Override
-  public void execute() {
+  public CmdResult execute() {
 
   }
 }
