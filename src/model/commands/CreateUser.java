@@ -1,7 +1,7 @@
 package model.commands;
 
 import model.Model;
-import model.validation.InputValidator;
+import model.validation.validator.InputValidator;
 
 /**
  * Represents an encapsulation of the data and functionality needed to create a new, unique User

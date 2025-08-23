@@ -1,7 +1,7 @@
 package model.commands;
 
 import model.Model;
-import model.validation.InputValidator;
+import model.validation.validator.InputValidator;
 
 /**
  * Represents the ability to delete a specified user from the Model with which this DeleteUser

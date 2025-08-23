@@ -1,4 +1,4 @@
-package model.validation;
+package model.validation.result;
 
 /**
  *

@@ -1,6 +1,6 @@
 package model.commands;
 
-import model.validation.InputValidator;
+import model.validation.validator.InputValidator;
 import model.Model;
 
 /**

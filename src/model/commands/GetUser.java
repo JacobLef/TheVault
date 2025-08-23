@@ -1,7 +1,7 @@
 package model.commands;
 
 import model.Model;
-import model.validation.InputValidator;
+import model.validation.validator.InputValidator;
 
 /**
  * Represents the ability to fetch the information associated with a given user, so long as the

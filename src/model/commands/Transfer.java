@@ -1,7 +1,7 @@
 package model.commands;
 
 import model.Model;
-import model.validation.InputValidator;
+import model.validation.validator.InputValidator;
 
 /**
  * Represents the ability to Transfer information from one account to another account, either

@@ -1,7 +1,7 @@
 package model.commands;
 
 import model.Model;
-import model.validation.InputValidator;
+import model.validation.validator.InputValidator;
 
 /**
  * Represents functionality to delete an account under a specified user, so long as that account

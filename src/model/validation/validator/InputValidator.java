@@ -1,4 +1,6 @@
-package model.validation;
+package model.validation.validator;
+
+import model.validation.result.ValidationResult;
 
 /**
  * Offers functionality to validate the input that has been provided to it, with the presumption
@@ -8,5 +10,5 @@ package model.validation;
  *
  */
 public interface InputValidator {
-  ValidationResult validate(String input[]);
+  ValidationResult validate(String[] input);
 }

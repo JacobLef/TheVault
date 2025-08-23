@@ -1,8 +1,8 @@
 package model.commands;
 
 import model.Model;
-import model.validation.InputValidator;
-import model.validation.ValidationResult;
+import model.validation.validator.InputValidator;
+import model.validation.result.ValidationResult;
 
 import java.util.HashMap;
 import java.util.Map;

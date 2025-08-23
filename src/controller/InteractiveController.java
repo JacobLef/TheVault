@@ -1,15 +1,11 @@
 package controller;
 
-import model.Managed;
 import model.Model;
-import model.commands.*;
+import model.commands.GenericCommand;
 import view.View;
 
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
-import java.util.function.Function;
 
 /**
  * An individual command-based controller such that it expects singular commands from the user,
@@ -47,7 +43,10 @@ public class InteractiveController implements Controller {
       String[] split = line.split("\\s");
       try {
         if (split[0].trim().equalsIgnoreCase("exit")) {
-          this.view.displayMessage("Closing down connection to bank: " + this.bank.getRecords());
+          this.view.displayMessage(
+              "Closing down connection to bank: "
+                  + this.model.getCurrentlyActiveBank().getRecords()
+          );
           break;
         }
         GenericCommand.makeCommand(this.model, split, split[0]).execute();
@@ -56,7 +55,7 @@ public class InteractiveController implements Controller {
             "The given command does not have all the required parameters: \n\t" + line
         );
       } catch (NullPointerException | IllegalArgumentException e) {
-        this.view.displayError(e);
+        this.view.displayError(e.getMessage());
       }
     }
     scanner.close();
