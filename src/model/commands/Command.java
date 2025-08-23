@@ -1,7 +1,5 @@
 package model.commands;
 
-import model.commandresult.CommandResult;
-
 /**
  * Represents an executable banking operation that encapsulates both the business logic
  * and input validation for a specific command. Commands follow the Command Pattern to
@@ -18,8 +16,12 @@ import model.commandresult.CommandResult;
  *  execution logic for each banking operation, promoting maintainability and extensibility.
  * </p>
  *
- * @param <T> The type of request object this command operates on
  */
 public interface Command {
-  CommandResult execute();
+  /**
+   * Execute this Command such that the Model now reflects the changes requested by this Commands
+   * functionality. This method assumes that the information stored within this Command is valid
+   * and thus does not check for input validity before performing executions.
+   */
+  void execute();
 }

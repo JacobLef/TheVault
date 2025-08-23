@@ -1,47 +1,30 @@
 package model.commands;
 
-import common.validation.InputValidator;
-import common.validation.ValidationResult;
-import model.Bank;
-import model.commandresult.CommandResult;
+import model.validation.InputValidator;
+import model.Model;
 
 /**
  * Offers functionality for checking whether a specified account is currently active under a
- * given username. An AccountExists object, when executed, will return its respective
- * AccountExistsResult record class.
+ * given username.
  *
- * @see AccountExistsResult record class for the structured return tytpe of this class.
  * @see AccountExistsValidator for the validation logic of the input given to an AccountExists obj.
  */
-public class AccountExists implements Command {
-  private final Bank bank;
-  private final String[] input ;
-
+public class AccountExists extends GenericCommand {
   /**
-   * Constructs a new AccountExists object with respect to the given Bank and input by the user.
-   * Validates the provided input, delegating the validation logic to the provided validator and
-   * throwing any errors that occur, if they do occur.
-   * @param bank  The bank with which this AccountExists object will communicate with.
-   * @param input The input from the user.
-   * @param iv    The validator for this respective object.
+   * Constructs a new Generic Command with respect to the given Bank and the given input by the
+   * user.
+   *
+   * @param m     The Model with which this GenericCommand will communicate with.
+   * @param input The input from the user to be parsed, validated, deconstructed, and passed to
+   *              the given model for further functionality.
+   * @param iv    The validator to validate this AccountExists object's input.
    */
-  public AccountExists(
-      Bank bank,
-      String[] input,
-      InputValidator iv
-  ) throws IllegalArgumentException {
-    ValidationResult res = iv.validate(input);
-    if (res.isError()) {
-      throw new IllegalArgumentException(res.message());
-    }
-
-    this.bank = bank;
-    this.input = input;
-    this.execute();
+  public AccountExists(Model m, String[] input, InputValidator iv) {
+    super(m, input, iv);
   }
 
   @Override
-  public CommandResult execute() {
-    return null;
+  public void execute() {
+    return;
   }
 }

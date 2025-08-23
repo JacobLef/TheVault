@@ -23,9 +23,7 @@ import java.util.function.Function;
 public class InteractiveController implements Controller {
   private final InputStream in;
   private final Model model;
-  private final Managed bank;
   private final View view;
-  private final Map<String, Function<String[], ?>> cmds;
 
   /**
    * Constructs a new InteractiveController with respect to the given parameters.
@@ -39,53 +37,6 @@ public class InteractiveController implements Controller {
     this.in = in;
     this.view = view;
     this.model = model;
-    this.bank = this.model.getCurrentlyActiveBank();
-
-    this.cmds = new HashMap<>();
-    cmds.put(
-        "accountexists",
-        (input) -> new AccountExists(bank, input, new AccountExistsValidator())
-    );
-    cmds.put(
-        "createaccount",
-        (input) -> new CreateAccount(bank, input, new CreateAccountValidator())
-    );
-    cmds.put(
-        "createuser",
-        (input) -> new CreateUser(bank, input, new CreateUserValidator())
-    );
-    cmds.put(
-        "deleteaccount",
-        (input) -> new DeleteAccount(bank, input, new DeleteAccountValidator())
-    );
-    cmds.put(
-        "deleteuser",
-        (input) -> new DeleteUser(bank, input, new DeleteUserValidator())
-    );
-    cmds.put(
-        "deposit",
-        (input) -> new Deposit(bank, input, new DepositValidator())
-    );
-    cmds.put(
-        "getaccounts",
-        (input) -> new GetAccounts(bank, input, new GetAccountsValidator())
-    );
-    cmds.put(
-        "getuser",
-        (input) -> new GetUser(bank, input, new GetUserValidator())
-    );
-    cmds.put(
-        "transfer",
-        (input) -> new Transfer(bank, input, new TransferValidator())
-    );
-    cmds.put(
-        "updateuser",
-        (input) -> new UpdateUser(bank, input, new UpdateValidator())
-    );
-    cmds.put(
-        "withdraw",
-        (input) -> new Withdraw(bank, input, WithdrawValidator())
-    );
   }
 
   @Override
@@ -99,7 +50,7 @@ public class InteractiveController implements Controller {
           this.view.displayMessage("Closing down connection to bank: " + this.bank.getRecords());
           break;
         }
-        cmds.get(split[0].trim().toLowerCase()).apply(split);
+        GenericCommand.makeCommand(this.model, split, split[0]).execute();
       } catch (IndexOutOfBoundsException e) {
         this.view.displayError(
             "The given command does not have all the required parameters: \n\t" + line

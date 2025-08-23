@@ -1,4 +1,4 @@
-package common.validation;
+package model.validation;
 
 /**
  * Offers functionality to validate the input that has been provided to it, with the presumption
