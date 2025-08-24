@@ -9,6 +9,7 @@ import model.validation.result.ValidationResult;
 import model.validation.validator.InputValidator;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -139,4 +140,17 @@ public abstract class GenericCommand implements Command {
   protected CmdResult filledResult(Class<?> type, Object prop) {
     return new CmdResultImpl.Builder().withType(Boolean.class).withProp(prop).build();
   }
+
+  /**
+   * Requires that the given flag mapping of (flag, value) contains ALL the given flags.
+   * @param given    the flags which were parsed from the user's input. These flags can be
+   *                 assumed to all have matching values.
+   * @param required the flags which must be present in the given list of actual flags extracted
+   *                 from the user's input.
+   * @throws IllegalArgumentException if there is any mismatch between the two flag lists.
+   */
+  protected abstract void requireFlags(
+      List<String> given,
+      List<String> required
+  ) throws IllegalArgumentException;
 }
