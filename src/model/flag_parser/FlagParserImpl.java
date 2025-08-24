@@ -1,4 +1,4 @@
-package model.flagparser;
+package model.flag_parser;
 
 import java.util.Arrays;
 import java.util.HashMap;

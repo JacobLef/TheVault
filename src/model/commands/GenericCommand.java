@@ -3,8 +3,8 @@ package model.commands;
 import model.Model;
 import model.commandresult.CmdResult;
 import model.commandresult.CmdResultImpl;
-import model.flagparser.FlagParser;
-import model.flagparser.FlagParserImpl;
+import model.flag_parser.FlagParser;
+import model.flag_parser.FlagParserImpl;
 import model.validation.result.ValidationResult;
 import model.validation.validator.InputValidator;
 

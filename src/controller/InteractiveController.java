@@ -1,6 +1,7 @@
 package controller;
 
 import model.Model;
+import model.commandresult.CmdResult;
 import model.commands.GenericCommand;
 import view.View;
 
@@ -49,7 +50,7 @@ public class InteractiveController implements Controller {
           );
           break;
         }
-        GenericCommand.makeCommand(this.model, split, split[0]).execute();
+        CmdResult res = GenericCommand.makeCommand(this.model, split, split[0]).execute();
       } catch (IndexOutOfBoundsException e) {
         this.view.displayError(
             "The given command does not have all the required parameters: \n\t" + line

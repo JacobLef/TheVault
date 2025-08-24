@@ -34,9 +34,6 @@ public class GetUser extends GenericCommand {
   public CmdResult execute() {
     Map<String, String> flags = this.flags();
     User user = this.model.getUser(flags.get("username"), flags.get("password"));
-    if (user == null) {
-      return this.emptyResult();
-    }
-    return this.filledResult(User.class, user);
+    return user == null ? this.emptyResult() : this.filledResult(User.class, user);
   }
 }
