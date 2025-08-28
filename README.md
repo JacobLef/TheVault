@@ -15,22 +15,22 @@ Key Technologies: Java, Docker, JUnit 5, Custom B+ Tree Implementation, Relation
 
 ## Clone the Repository
 ```bash
-    git clone https://github.com/JacobLef/TheVault
+git clone https://github.com/JacobLef/TheVault
 ```
 
 ## Docker Configuration: Build and Run
 ````bash
-    docker build -t banking-database .    
+docker build -t banking-database .    
 ````
 ```bash
-    docker run -p 8080:8080 banking-database
+docker run -p 8080:8080 banking-database
 ```
 
 #### To use docker compose instead:
 ```bash
-    docker compose up
+docker compose up
 ```
 #### To use docker compose started in the background:
 ````bash
-    docker compose -d up
+docker compose -d up
 ````
