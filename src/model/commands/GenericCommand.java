@@ -5,11 +5,8 @@ import model.commandresult.CmdResult;
 import model.commandresult.CmdResultImpl;
 import model.flag_parser.FlagParser;
 import model.flag_parser.FlagParserImpl;
-import model.validation.result.ValidationResult;
-import model.validation.validator.InputValidator;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -30,52 +27,53 @@ public abstract class GenericCommand implements Command {
   protected final Model model;
   protected final String[] in;
   protected final FlagParser flagParser;
+  protected Map<String, Class<?>> expectedFlags;
   private static final Map<String, BiFunction<Model, String[], Command>> cmds = new HashMap<>();
 
   static {
     cmds.put(
         "accountexists",
-        (m, input) -> new AccountExists(m, input, new AccountExistsValidator())
+        (m, input) -> new AccountExists(m, input)
     );
     cmds.put(
         "createaccount",
-        (m, input) -> new CreateAccount(m, input, new CreateAccountValidator())
+        (m, input) -> new CreateAccount(m, input)
     );
     cmds.put(
         "createuser",
-        (m, input) -> new CreateUser(m, input, new CreateUserValidator())
+        (m, input) -> new CreateUser(m, input)
     );
     cmds.put(
         "deleteaccount",
-        (m, input) -> new DeleteAccount(m, input, new DeleteAccountValidator())
+        (m, input) -> new DeleteAccount(m, input)
     );
     cmds.put(
         "deleteuser",
-        (m, input) -> new DeleteUser(m, input, new DeleteUserValidator())
+        (m, input) -> new DeleteUser(m, input)
     );
     cmds.put(
         "deposit",
-        (m, input) -> new Deposit(m, input, new DepositValidator())
+        (m, input) -> new Deposit(m, input)
     );
     cmds.put(
         "getaccounts",
-        (m, input) -> new GetAccounts(m, input, new GetAccountsValidator())
+        (m, input) -> new GetAccounts(m, input)
     );
     cmds.put(
         "getuser",
-        (m, input) -> new GetUser(m, input, new GetUserValidator())
+        (m, input) -> new GetUser(m, input)
     );
     cmds.put(
         "transfer",
-        (m, input) -> new Transfer(m, input, new TransferValidator())
+        (m, input) -> new Transfer(m, input)
     );
     cmds.put(
         "updateuser",
-        (m, input) -> new UpdateUser(m, input, new UpdateValidator())
+        (m, input) -> new UpdateUser(m, input)
     );
     cmds.put(
         "withdraw",
-        (m, input) -> new Withdraw(m, input, WithdrawValidator())
+        (m, input) -> new Withdraw(m, input)
     );
   }
 
@@ -100,15 +98,8 @@ public abstract class GenericCommand implements Command {
    * @param m The Model with which this GenericCommand will communicate with.
    * @param input The input from the user to be parsed, validated, deconstructed, and passed to
    *              the given model for further functionality.
-   * @param iv The respective input validator for this GenericCommand. It is reliant upon the
-   *           user for the InputValidator and the respective Command to match as this will not
-   *           be cross-checked.
    */
-  protected GenericCommand(Model m, String[] input, InputValidator iv) {
-    ValidationResult res = iv.validate(input);
-    if (res.isError()) {
-      throw new IllegalArgumentException(res.message());
-    }
+  protected GenericCommand(Model m, String[] input) {
     this.model = m;
     this.in = input;
     this.flagParser = new FlagParserImpl();
@@ -149,8 +140,29 @@ public abstract class GenericCommand implements Command {
    *                 from the user's input.
    * @throws IllegalArgumentException if there is any mismatch between the two flag lists.
    */
-  protected abstract void requireFlags(
-      List<String> given,
-      List<String> required
-  ) throws IllegalArgumentException;
+  protected void requireFlags(
+      Map<String, String> given,
+      Map<String, Class<?>> required
+  ) throws IllegalArgumentException {
+    for (Map.Entry<String, Class<?>> entry : required.entrySet()) {
+      String key = entry.getKey();
+      Class<?> type = entry.getValue();
+
+      String givenValue = given.getOrDefault(key, null);
+      if (givenValue == null) {
+        throw new IllegalArgumentException(
+            "Command expected flag of " + key + " and was not given it!"
+        );
+      }
+
+      try {
+        type.cast(givenValue);
+      } catch (ClassCastException e) {
+        throw new IllegalArgumentException(
+            "Command expected the flag of " + key + " to have a type of " + type
+            + " but was given the following corresponding value: " + givenValue
+        );
+      }
+    }
+  }
 }

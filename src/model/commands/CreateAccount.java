@@ -4,16 +4,12 @@ import model.Model;
 import model.commandresult.CmdResult;
 import model.types.AccountType;
 import model.user.BankAccount;
-import model.validation.validator.InputValidator;
 
 import java.util.Map;
 
 /**
  * Offers functionality to Create an account under a specified user, so long as there are no
- * other accounts under that user with the specified account properties. The CreateAccount class
- * relies upon the CreateAccountValidator.
- *
- * @see CreateAccountValidator for input validation logic.
+ * other accounts under that user with the specified account properties.
  */
 public class CreateAccount extends GenericCommand {
   /**
@@ -23,17 +19,22 @@ public class CreateAccount extends GenericCommand {
    * @param m     The Model with which this GenericCommand will communicate with.
    * @param input The input from the user to be parsed, validated, deconstructed, and passed to
    *              the given model for further functionality.
-   * @param iv    The respective input validator for this GenericCommand. It is reliant upon the
-   *              user for the InputValidator and the respective Command to match as this will not
-   *              be cross-checked.
    */
-  protected CreateAccount(Model m, String[] input, InputValidator iv) {
-    super(m, input, iv);
+  protected CreateAccount(Model m, String[] input) {
+    super(m, input);
+    this.expectedFlags = Map.of(
+        "username", String.class,
+        "password", String.class,
+        "accountName", String.class,
+        "accountType", AccountType.class,
+        "balance", Double.class
+    );
   }
 
   @Override
   public CmdResult execute() {
     Map<String, String> flags = this.flags();
+    this.requireFlags(flags, expectedFlags);
     BankAccount bc = this.model.createAccount(
         flags.get("username"),
         flags.get("password"),

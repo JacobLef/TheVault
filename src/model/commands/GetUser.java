@@ -3,16 +3,12 @@ package model.commands;
 import model.Model;
 import model.commandresult.CmdResult;
 import model.user.User;
-import model.validation.validator.InputValidator;
 
 import java.util.Map;
 
 /**
  * Represents the ability to fetch the information associated with a given user, so long as the
- * specified user exists within the given Model. The GetUser objects rely entirely on the
- * GetUserValidator class for all validation logic.
- *
- * @see GetUserValidator for validation logic.
+ * specified user exists within the given Model.
  */
 public class GetUser extends GenericCommand {
   /**
@@ -22,17 +18,19 @@ public class GetUser extends GenericCommand {
    * @param m     The Model with which this GenericCommand will communicate with.
    * @param input The input from the user to be parsed, validated, deconstructed, and passed to
    *              the given model for further functionality.
-   * @param iv    The respective input validator for this GenericCommand. It is reliant upon the
-   *              user for the InputValidator and the respective Command to match as this will not
-   *              be cross-checked.
    */
-  protected GetUser(Model m, String[] input, InputValidator iv) {
-    super(m, input, iv);
+  protected GetUser(Model m, String[] input) {
+    super(m, input);
+    this.expectedFlags = Map.of(
+        "username", String.class,
+        "password", String.class
+    );
   }
 
   @Override
   public CmdResult execute() {
     Map<String, String> flags = this.flags();
+    this.requireFlags(flags, expectedFlags);
     User user = this.model.getUser(flags.get("username"), flags.get("password"));
     return user == null ? this.emptyResult() : this.filledResult(User.class, user);
   }

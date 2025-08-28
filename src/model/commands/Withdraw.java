@@ -2,16 +2,12 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
-import model.validation.validator.InputValidator;
 
 import java.util.Map;
 
 /**
  * Represents the ability to withdraw from a specified account under a specified user, so long as
- * they exist under the given user and model, respectively. Withdraw objects rely entirely on the
- * WithdrawValidator for all input validation.
- *
- * @see WithdrawValidator for validation logic.
+ * they exist under the given user and model, respectively.
  */
 public class Withdraw extends GenericCommand {
   /**
@@ -21,17 +17,21 @@ public class Withdraw extends GenericCommand {
    * @param m     The Model with which this GenericCommand will communicate with.
    * @param input The input from the user to be parsed, validated, deconstructed, and passed to
    *              the given model for further functionality.
-   * @param iv    The respective input validator for this GenericCommand. It is reliant upon the
-   *              user for the InputValidator and the respective Command to match as this will not
-   *              be cross-checked.
    */
-  protected Withdraw(Model m, String[] input, InputValidator iv) {
-    super(m, input, iv);
+  protected Withdraw(Model m, String[] input) {
+    super(m, input);
+    this.expectedFlags = Map.of(
+        "username", String.class,
+        "password", String.class,
+        "accountName", String.class,
+        "amount", Double.class
+    );
   }
 
   @Override
   public CmdResult execute() {
     Map<String, String> flags = this.flags();
+    this.requireFlags(flags, expectedFlags);
     double withdrawn = this.model.withdraw(
         flags.get("username"),
         flags.get("password"),

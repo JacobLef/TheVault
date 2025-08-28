@@ -10,9 +10,9 @@ import model.commandresult.CmdResult;
  * user interface concerns and business logic.
  *
  * <p>
- *  Each Command implementation is responsible for validating the provided request data using its
- *  associated InputValidator, executing the core business operation if validation passes,
- *  returning a standardized CommandResult indicating success or failure, and ensuring proper
+ *  Each Command implementation is responsible for validating the provided request data,
+ *  executing the core business operation if validation passes, returning a standardized
+ *  CommandResult indicating a returned result or none, and ensuring proper
  *  error handling and logging throughout the operation. This design allows the controller layer
  *  to dispatch operations uniformly without needing to know the specific validation rules or
  *  execution logic for each banking operation, promoting maintainability and extensibility.

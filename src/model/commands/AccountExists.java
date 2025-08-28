@@ -2,7 +2,6 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
-import model.validation.validator.InputValidator;
 
 import java.util.Map;
 
@@ -10,7 +9,6 @@ import java.util.Map;
  * Offers functionality for checking whether a specified account is currently active under a
  * given username.
  *
- * @see AccountExistsValidator for the validation logic of the input given to an AccountExists obj.
  */
 public class AccountExists extends GenericCommand {
   /**
@@ -20,15 +18,19 @@ public class AccountExists extends GenericCommand {
    * @param m     The Model with which this GenericCommand will communicate with.
    * @param input The input from the user to be parsed, validated, deconstructed, and passed to
    *              the given model for further functionality.
-   * @param iv    The validator to validate this AccountExists object's input.
    */
-  public AccountExists(Model m, String[] input, InputValidator iv) {
-    super(m, input, iv);
+  public AccountExists(Model m, String[] input) {
+    super(m, input);
+    this.expectedFlags = Map.of(
+        "username", String.class,
+        "accountName", String.class
+    );
   }
 
   @Override
   public CmdResult execute() {
     Map<String, String> flags = flags();
+    this.requireFlags(flags, expectedFlags);
     boolean exists = this.model.accountExists(flags.get("username"), flags.get("accountName"));
     return this.filledResult(Boolean.class, exists);
   }

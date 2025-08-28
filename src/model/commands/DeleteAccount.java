@@ -3,16 +3,13 @@ package model.commands;
 import model.Model;
 import model.commandresult.CmdResult;
 import model.user.BankAccount;
-import model.validation.validator.InputValidator;
 
 import java.util.Map;
 
 /**
  * Represents functionality to delete an account under a specified user, so long as that account
- * actually exists under the user within the specified Model. DeleteAccount objects rely on the
- * DeleteAccountValidator validation object for all input validation.
+ * actually exists under the user within the specified Model.
  *
- * @see DeleteAccountValidator for validation logic of user input.
  */
 public class DeleteAccount extends GenericCommand {
   /**
@@ -22,17 +19,20 @@ public class DeleteAccount extends GenericCommand {
    * @param m     The Model with which this GenericCommand will communicate with.
    * @param input The input from the user to be parsed, validated, deconstructed, and passed to
    *              the given model for further functionality.
-   * @param iv    The respective input validator for this GenericCommand. It is reliant upon the
-   *              user for the InputValidator and the respective Command to match as this will not
-   *              be cross-checked.
    */
-  protected DeleteAccount(Model m, String[] input, InputValidator iv) {
-    super(m, input, iv);
+  protected DeleteAccount(Model m, String[] input) {
+    super(m, input);
+    this.expectedFlags = Map.of(
+        "username", String.class,
+        "password", String.class,
+        "accountName", String.class
+    );
   }
 
   @Override
   public CmdResult execute() {
     Map<String, String> flags = this.flags();
+    this.requireFlags(flags, expectedFlags);
     BankAccount bc = this.model.deleteAccount(
         flags.get("username"),
         flags.get("password"),

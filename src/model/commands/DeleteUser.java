@@ -3,16 +3,13 @@ package model.commands;
 import model.Model;
 import model.commandresult.CmdResult;
 import model.user.UserLog;
-import model.validation.validator.InputValidator;
 
 import java.util.Map;
 
 /**
  * Represents the ability to delete a specified user from the Model with which this DeleteUser
  * object communicates with, so long as that Model contains the specified user properties.
- * DeleteUser objects rely entirely on the DeleteUserValidator class for all validation logic.
  *
- * @see DeleteUserValidator
  */
 public class DeleteUser extends GenericCommand {
   /**
@@ -22,17 +19,19 @@ public class DeleteUser extends GenericCommand {
    * @param m     The Model with which this GenericCommand will communicate with.
    * @param input The input from the user to be parsed, validated, deconstructed, and passed to
    *              the given model for further functionality.
-   * @param iv    The respective input validator for this GenericCommand. It is reliant upon the
-   *              user for the InputValidator and the respective Command to match as this will not
-   *              be cross-checked.
    */
-  protected DeleteUser(Model m, String[] input, InputValidator iv) {
-    super(m, input, iv);
+  protected DeleteUser(Model m, String[] input) {
+    super(m, input);
+    this.expectedFlags = Map.of(
+        "username", String.class,
+        "password", String.class
+    );
   }
 
   @Override
   public CmdResult execute() {
     Map<String, String> flags = this.flags();
+    this.requireFlags(flags, expectedFlags);
     UserLog log = this.model.deleteUser(
         flags.get("username"),
         flags.get("password")

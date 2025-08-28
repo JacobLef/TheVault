@@ -4,16 +4,12 @@ import model.Model;
 import model.commandresult.CmdResult;
 import model.types.UserProperty;
 import model.user.User;
-import model.validation.validator.InputValidator;
 
 import java.util.Map;
 
 /**
  * Represents the ability to update one of the properties (username, email, password) of a
- * specified user, so long as that user exists within the specified Model. UpdateUser object rely
- * entirely on the UpdateUserValidator for input validation.
- *
- * @see UpdateUserValidator for validation logic.
+ * specified user, so long as that user exists within the specified Model.
  */
 public class UpdateUser extends GenericCommand {
   /**
@@ -22,17 +18,21 @@ public class UpdateUser extends GenericCommand {
    * @param m     The Model with which this GenericCommand will communicate with.
    * @param input The input from the user to be parsed, validated, deconstructed, and passed to
    *              the given model for further functionality.
-   * @param iv    The respective input validator for this GenericCommand. It is reliant upon the
-   *              user for the InputValidator and the respective Command to match as this will not
-   *              be cross-checked.
    */
-  protected UpdateUser(Model m, String[] input, InputValidator iv) {
-    super(m, input, iv);
+  protected UpdateUser(Model m, String[] input) {
+    super(m, input);
+    this.expectedFlags = Map.of(
+        "username", String.class,
+        "password", String.class,
+        "property", UserProperty.class,
+        "value", String.class
+    );
   }
 
   @Override
   public CmdResult execute() {
     Map<String, String> flags = this.flags();
+    this.requireFlags(flags, expectedFlags);
     User user = this.model.updateUser(
         flags.get("username"),
         flags.get("password"),
