@@ -89,7 +89,7 @@ public abstract class GenericCommand implements Command {
    *         respective Command object.
    */
   public static Command makeCommand(Model m, String[] in, String cmdName) {
-    return cmds.get(cmdName).apply(m, in);
+    return cmds.get(cmdName.toLowerCase()).apply(m, in);
   }
 
   /**
@@ -129,7 +129,7 @@ public abstract class GenericCommand implements Command {
    * @return the respective CmdResult whose fields reflect those given.
    */
   protected CmdResult filledResult(Class<?> type, Object prop) {
-    return new CmdResultImpl.Builder().withType(Boolean.class).withProp(prop).build();
+    return new CmdResultImpl.Builder().withType(type).withProp(prop).build();
   }
 
   /**

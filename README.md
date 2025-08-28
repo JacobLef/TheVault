@@ -13,6 +13,11 @@ software engineering principles.
 
 Key Technologies: Java, Docker, JUnit 5, Custom B+ Tree Implementation, Relational Database Design
 
+## Clone the Repository
+```bash
+    git clone https://github.com/JacobLef/TheVault
+```
+
 ## Docker Configuration: Build and Run
 ````bash
     docker build -t banking-database .    
