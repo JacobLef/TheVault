@@ -52,7 +52,7 @@ public class LeafNodeImpl<K extends Comparable<K>, V>
   @Override
   public Node.SplitResult<K, V> split() {
     LeafNodeImpl<K, V> newLeaf = new LeafNodeImpl<>();
-    int splitIndex = keyCount / 2;
+    int splitIndex = (keyCount + 1) / 2;
     int moveCount = keyCount - splitIndex;
 
     for (int i = 0; i < moveCount; i++) {
@@ -85,13 +85,27 @@ public class LeafNodeImpl<K extends Comparable<K>, V>
     }
 
     LeafNode<K, V> otherLeaf = (LeafNode<K, V>) other;
-    return (this.keyCount + otherLeaf.getKeyCount()) <= MAX_KEYS;
+
+    if ((this.keyCount + otherLeaf.getKeyCount()) > MAX_KEYS) {
+      return false;
+    }
+
+    return areAdjacentSiblings(otherLeaf);
+  }
+
+  /**
+   * Checks if this node and the other node are adjacent siblings.
+   * @param other the other leaf node to check
+   * @return true if they are adjacent siblings
+   */
+  private boolean areAdjacentSiblings(LeafNode<K, V> other) {
+    return this.next == other || this.prev == other;
   }
 
   @Override
   public void mergeWith(Node<K, V> other, K separatorKey) {
     if (!canMergeWith(other)) {
-      throw new IllegalArgumentException("Cannot merge: combined size exceeds maximum");
+      throw new IllegalArgumentException("Cannot merge: nodes are not compatible");
     }
 
     LeafNode<K, V> otherLeaf = (LeafNode<K, V>) other;
@@ -118,25 +132,22 @@ public class LeafNodeImpl<K extends Comparable<K>, V>
 
   @Override
   public K borrowFromLeft(Node<K, V> leftSibling) {
-    if (cannotBorrowFromSibling(leftSibling.isLeaf(), leftSibling.getKeyCount())) {
+    if (!canBorrowFromSibling(leftSibling)) {
       return null;
     }
 
     LeafNode<K, V> leftLeaf = (LeafNode<K, V>) leftSibling;
     LeafNodeImpl<K, V> leftLeafImpl = (LeafNodeImpl<K, V>) leftSibling;
 
-    // Shift current keys and values to make room
     for (int i = keyCount; i > 0; i--) {
       keys[i] = keys[i - 1];
       values[i] = values[i - 1];
     }
 
-    // Borrow from left sibling
     int lastIndex = leftLeaf.getKeyCount() - 1;
     keys[0] = leftLeaf.getKeys()[lastIndex];
     values[0] = leftLeafImpl.values[lastIndex];
 
-    // Clear borrowed entry from left sibling
     leftLeafImpl.keys[lastIndex] = null;
     leftLeafImpl.values[lastIndex] = null;
 
@@ -148,24 +159,21 @@ public class LeafNodeImpl<K extends Comparable<K>, V>
 
   @Override
   public K borrowFromRight(Node<K, V> rightSibling) {
-    if (cannotBorrowFromSibling(rightSibling.isLeaf(), rightSibling.getKeyCount())) {
+    if (!canBorrowFromSibling(rightSibling)) {
       return null;
     }
 
     LeafNode<K, V> rightLeaf = (LeafNode<K, V>) rightSibling;
     LeafNodeImpl<K, V> rightLeafImpl = (LeafNodeImpl<K, V>) rightSibling;
 
-    // Borrow first entry from right sibling
     keys[keyCount] = rightLeaf.getKeys()[0];
     values[keyCount] = rightLeafImpl.values[0];
 
-    // Shift entries in right sibling
     for (int i = 0; i < rightLeaf.getKeyCount() - 1; i++) {
       rightLeafImpl.keys[i] = rightLeafImpl.keys[i + 1];
       rightLeafImpl.values[i] = rightLeafImpl.values[i + 1];
     }
 
-    // Clear last entry in right sibling
     int lastIndex = rightLeaf.getKeyCount() - 1;
     rightLeafImpl.keys[lastIndex] = null;
     rightLeafImpl.values[lastIndex] = null;
@@ -177,63 +185,55 @@ public class LeafNodeImpl<K extends Comparable<K>, V>
   }
 
   /**
-   * Determines if this LeafNodeImpl can borrow from its sibling (which direction is arbitrary),
-   * with respect to the sibling's leafness and key count.
-   * @param sibIsLeaf   Is the sibling a leaf?
-   * @param sibKeyCount Key count of the sibling.
-   * @return true if this LeafNodeImpl cannot borrow and false otherwise.
+   * Determines if this LeafNodeImpl can borrow from the given sibling.
+   * @param sibling the potential sibling to borrow from
+   * @return true if borrowing is possible
    */
-  private boolean cannotBorrowFromSibling(boolean sibIsLeaf, int sibKeyCount) {
-    return !sibIsLeaf || sibKeyCount <= MIN_KEYS;
+  private boolean canBorrowFromSibling(Node<K, V> sibling) {
+    return sibling != null && sibling.isLeaf() && sibling.getKeyCount() > MIN_KEYS;
   }
 
   @Override
   public boolean insertUnique(K key, V value) {
-    boolean keyExists = this.contains(key);
-    if (keyExists) {
-      for (int i = 0; i < keyCount; i++) {
-        if (keys[i].equals(key)) {
-          values[i] = value;
-          break;
-        }
-      }
-    } else {
-      if (this.isFull()) {
-        throw new IllegalStateException("Cannot insert into full leaf node - split required");
-      }
-
-      int insertIndex = getInsertionIndex(key);
-
-      for (int i = keyCount; i > insertIndex; i--) {
-        keys[i] = keys[i - 1];
-        values[i] = values[i - 1];
-      }
-
-      keys[insertIndex] = key;
-      values[insertIndex] = value;
-      keyCount++;
+    if (key == null) {
+      throw new IllegalArgumentException("Key cannot be null");
     }
-    return !keyExists;
+
+    int existingIndex = findKeyIndex(key);
+    if (existingIndex >= 0) {
+      values[existingIndex] = value;
+      return false;
+    }
+
+    if (this.isFull()) {
+      throw new IllegalStateException("Cannot insert into full leaf node - split required");
+    }
+
+    int insertIndex = getInsertionIndex(key);
+
+    for (int i = keyCount; i > insertIndex; i--) {
+      keys[i] = keys[i - 1];
+      values[i] = values[i - 1];
+    }
+
+    keys[insertIndex] = key;
+    values[insertIndex] = value;
+    keyCount++;
+    return true;
   }
 
   @Override
   public V deleteKey(K key) throws IllegalArgumentException {
-    int index = -1;
-    for (int i = 0; i < this.keyCount; i++) {
-      if (keys[i].equals(key)) {
-        index = i;
-        break;
-      }
-    }
-
+    int index = findKeyIndex(key);
     if (index == -1) {
       throw new IllegalArgumentException("Key not found: " + key);
     }
 
     V deletedValue = this.values[index];
+
     for (int i = index; i < keyCount - 1; i++) {
-      this.values[i] = this.values[i + 1];
       this.keys[i] = this.keys[i + 1];
+      this.values[i] = this.values[i + 1];
     }
 
     keys[keyCount - 1] = null;
@@ -241,6 +241,20 @@ public class LeafNodeImpl<K extends Comparable<K>, V>
     keyCount--;
 
     return deletedValue;
+  }
+
+  /**
+   * Finds the index of a key in the keys array.
+   * @param key the key to find
+   * @return the index of the key, or -1 if not found
+   */
+  private int findKeyIndex(K key) {
+    for (int i = 0; i < keyCount; i++) {
+      if (keys[i].equals(key)) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   /**
@@ -274,12 +288,11 @@ public class LeafNodeImpl<K extends Comparable<K>, V>
 
   @Override
   public V get(K key) {
-    for (int i = 0; i < keyCount; i++) {
-      if (keys[i].equals(key)) {
-        return values[i];
-      }
+    if (key == null) {
+      return null;
     }
-    return null;
+    int index = findKeyIndex(key);
+    return index >= 0 ? values[index] : null;
   }
 
   @Override

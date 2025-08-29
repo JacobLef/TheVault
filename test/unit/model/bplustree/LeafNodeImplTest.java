@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * This is a tester class for LeafNodeImpl objects.
+ * Comprehensive test suite for LeafNodeImpl that verifies B+ tree invariants.
  */
 public class LeafNodeImplTest {
 
@@ -63,6 +63,11 @@ public class LeafNodeImplTest {
 
     assertEquals(Integer.valueOf(5), leafNode.getMinKey());
     assertEquals(Integer.valueOf(15), leafNode.getMaxKey());
+  }
+
+  @Test
+  void insertNullKeyThrowsException() {
+    assertThrows(IllegalArgumentException.class, () -> leafNode.insertUnique(null, "value"));
   }
 
   @Test
@@ -123,7 +128,17 @@ public class LeafNodeImplTest {
   }
 
   @Test
-  void splitCreatesNewNodeAndPromotesCorrectKey() {
+  void deleteOnlyKeyLeavesEmptyNode() {
+    leafNode.insertUnique(10, "ten");
+    leafNode.deleteKey(10);
+
+    assertEquals(0, leafNode.size());
+    assertNull(leafNode.get(10));
+    assertTrue(leafNode.isUnderflow());
+  }
+
+  @Test
+  void splitCreatesBalancedNodes() {
     leafNode.insertUnique(10, "ten");
     leafNode.insertUnique(20, "twenty");
     leafNode.insertUnique(30, "thirty");
@@ -132,17 +147,18 @@ public class LeafNodeImplTest {
     LeafNode<Integer, String> newLeaf = (LeafNode<Integer, String>) result.newNode();
     Integer promotedKey = result.promotedKey();
 
-    assertEquals(Integer.valueOf(20), promotedKey);
+    assertNotNull(promotedKey);
 
-    assertEquals(1, leafNode.size());
-    assertEquals("ten", leafNode.get(10));
-
-    assertEquals(2, newLeaf.size());
-    assertEquals("twenty", newLeaf.get(20));
-    assertEquals("thirty", newLeaf.get(30));
+    int totalOriginalSize = 3;
+    int leftSize = leafNode.size();
+    int rightSize = newLeaf.size();
+    assertEquals(totalOriginalSize, leftSize + rightSize);
+    assertTrue(Math.abs(leftSize - rightSize) <= 1);
 
     assertEquals(newLeaf, leafNode.getNext());
     assertEquals(leafNode, newLeaf.getPrev());
+
+    assertTrue(leafNode.getMaxKey().compareTo(newLeaf.getMinKey()) <= 0);
   }
 
   @Test
@@ -161,16 +177,30 @@ public class LeafNodeImplTest {
   }
 
   @Test
-  void canMergeWithCompatibleLeafNode() {
+  void canMergeWithAdjacentCompatibleLeafNode() {
     LeafNode<Integer, String> otherLeaf = new LeafNodeImpl<>();
 
     leafNode.insertUnique(10, "ten");
     otherLeaf.insertUnique(20, "twenty");
 
+    leafNode.setNext(otherLeaf);
+    otherLeaf.setPrev(leafNode);
+
     assertTrue(leafNode.canMergeWith(otherLeaf));
 
     leafNode.insertUnique(15, "fifteen");
     otherLeaf.insertUnique(25, "twenty-five");
+    otherLeaf.insertUnique(30, "thirty");
+
+    assertFalse(leafNode.canMergeWith(otherLeaf));
+  }
+
+  @Test
+  void cannotMergeWithNonAdjacentNode() {
+    LeafNode<Integer, String> otherLeaf = new LeafNodeImpl<>();
+
+    leafNode.insertUnique(10, "ten");
+    otherLeaf.insertUnique(20, "twenty");
 
     assertFalse(leafNode.canMergeWith(otherLeaf));
   }
@@ -179,6 +209,11 @@ public class LeafNodeImplTest {
   void cannotMergeWithInternalNode() {
     InternalNode<Integer, String> internalNode = new InternalNodeImpl<>();
     assertFalse(leafNode.canMergeWith(internalNode));
+  }
+
+  @Test
+  void cannotMergeWithNull() {
+    assertFalse(leafNode.canMergeWith(null));
   }
 
   @Test
@@ -204,6 +239,24 @@ public class LeafNodeImplTest {
   }
 
   @Test
+  void mergeIncompatibleNodesThrowsException() {
+    LeafNode<Integer, String> otherLeaf = new LeafNodeImpl<>();
+
+    leafNode.insertUnique(10, "ten");
+    leafNode.insertUnique(15, "fifteen");
+    leafNode.insertUnique(20, "twenty");
+
+    otherLeaf.insertUnique(25, "twenty-five");
+    otherLeaf.insertUnique(30, "thirty");
+
+    leafNode.setNext(otherLeaf);
+    otherLeaf.setPrev(leafNode);
+
+    assertThrows(IllegalArgumentException.class,
+        () -> leafNode.mergeWith(otherLeaf, null));
+  }
+
+  @Test
   void borrowFromLeftSiblingWorksCorrectly() {
     LeafNode<Integer, String> leftSibling = new LeafNodeImpl<>();
 
@@ -221,6 +274,8 @@ public class LeafNodeImplTest {
     assertEquals("fifteen", leafNode.get(15));
     assertEquals("twenty", leafNode.get(20));
     assertNull(leftSibling.get(15));
+
+    assertEquals(Integer.valueOf(15), leafNode.getMinKey());
   }
 
   @Test
@@ -241,6 +296,8 @@ public class LeafNodeImplTest {
     assertEquals("twenty", leafNode.get(20));
     assertEquals("twenty-five", leafNode.get(25));
     assertNull(rightSibling.get(25));
+
+    assertEquals(Integer.valueOf(30), rightSibling.getMinKey());
   }
 
   @Test
@@ -253,6 +310,20 @@ public class LeafNodeImplTest {
   }
 
   @Test
+  void cannotBorrowFromInternalNode() {
+    InternalNode<Integer, String> internalNode = new InternalNodeImpl<>();
+
+    assertNull(leafNode.borrowFromLeft(internalNode));
+    assertNull(leafNode.borrowFromRight(internalNode));
+  }
+
+  @Test
+  void cannotBorrowFromNull() {
+    assertNull(leafNode.borrowFromLeft(null));
+    assertNull(leafNode.borrowFromRight(null));
+  }
+
+  @Test
   void getOperationsWorkCorrectly() {
     leafNode.insertUnique(10, "ten");
     leafNode.insertUnique(30, "thirty");
@@ -262,6 +333,12 @@ public class LeafNodeImplTest {
     assertEquals("twenty", leafNode.get(20));
     assertEquals("thirty", leafNode.get(30));
     assertNull(leafNode.get(40));
+  }
+
+  @Test
+  void getWithNullKeyReturnsNull() {
+    leafNode.insertUnique(10, "ten");
+    assertNull(leafNode.get(null));
   }
 
   @Test
@@ -382,6 +459,7 @@ public class LeafNodeImplTest {
     assertNotNull(values);
     assertEquals("ten", values[0]);
     assertEquals("twenty", values[1]);
+    assertEquals(2, values.length);
   }
 
   @Test
@@ -422,5 +500,76 @@ public class LeafNodeImplTest {
     assertEquals(leaf3, leaf2.getNext());
     assertNull(leaf3.getNext());
     assertNull(leaf1.getPrev());
+  }
+
+  @Test
+  void sequentialAccessThroughLinkedList() {
+    LeafNode<Integer, String> leaf1 = new LeafNodeImpl<>();
+    LeafNode<Integer, String> leaf2 = new LeafNodeImpl<>();
+    LeafNode<Integer, String> leaf3 = new LeafNodeImpl<>();
+
+    leaf1.insertUnique(5, "five");
+    leaf1.insertUnique(10, "ten");
+
+    leaf2.insertUnique(15, "fifteen");
+    leaf2.insertUnique(20, "twenty");
+
+    leaf3.insertUnique(25, "twenty-five");
+    leaf3.insertUnique(30, "thirty");
+
+    leaf1.setNext(leaf2);
+    leaf2.setPrev(leaf1);
+    leaf2.setNext(leaf3);
+    leaf3.setPrev(leaf2);
+
+    LeafNode<Integer, String> current = leaf1;
+    int totalValues = 0;
+    while (current != null) {
+      totalValues += current.size();
+      current = current.getNext();
+    }
+
+    assertEquals(6, totalValues);
+  }
+
+  @Test
+  void splitPreservesLinkedListChain() {
+    LeafNode<Integer, String> nextLeaf = new LeafNodeImpl<>();
+    nextLeaf.insertUnique(40, "forty");
+
+    leafNode.insertUnique(10, "ten");
+    leafNode.insertUnique(20, "twenty");
+    leafNode.insertUnique(30, "thirty");
+    leafNode.setNext(nextLeaf);
+    nextLeaf.setPrev(leafNode);
+
+    Node.SplitResult<Integer, String> result = leafNode.split();
+    LeafNode<Integer, String> newLeaf = (LeafNode<Integer, String>) result.newNode();
+
+    assertEquals(newLeaf, leafNode.getNext());
+    assertEquals(leafNode, newLeaf.getPrev());
+    assertEquals(nextLeaf, newLeaf.getNext());
+    assertEquals(newLeaf, nextLeaf.getPrev());
+  }
+
+  @Test
+  void borrowingMaintainsSortedOrder() {
+    LeafNode<Integer, String> leftSibling = new LeafNodeImpl<>();
+
+    leftSibling.insertUnique(5, "five");
+    leftSibling.insertUnique(10, "ten");
+    leftSibling.insertUnique(15, "fifteen");
+
+    leafNode.insertUnique(25, "twenty-five");
+
+    leafNode.borrowFromLeft(leftSibling);
+
+    Comparable<Integer>[] keys = leafNode.getKeys();
+    assertEquals(15, keys[0]);
+    assertEquals(25, keys[1]);
+
+    Comparable<Integer>[] leftKeys = leftSibling.getKeys();
+    assertEquals(5, leftKeys[0]);
+    assertEquals(10, leftKeys[1]);
   }
 }

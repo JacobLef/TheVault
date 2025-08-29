@@ -1,4 +1,4 @@
-package unit.model;
+package integration;
 
 import model.Bank;
 import model.Managed;

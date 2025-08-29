@@ -46,7 +46,7 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
   @Override
   public Node.SplitResult<K, V> split() {
     InternalNodeImpl<K, V> newInternal = new InternalNodeImpl<>();
-    int splitIndex = keyCount / 2;
+    int splitIndex = (keyCount + 1) / 2;
     K promotedKey = keys[splitIndex];
     int moveCount = keyCount - splitIndex - 1;
 
@@ -117,6 +117,10 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
 
   @Override
   public void insertKeyAndChild(K key, Node<K, V> rightChild) {
+    if (isFull()) {
+      throw new IllegalStateException("Cannot insert into full internal node");
+    }
+
     int insertIndex = 0;
     for (int i = 0; i < keyCount; i++) {
       if (key.compareTo(keys[i]) < 0) {
@@ -140,7 +144,7 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
 
   @Override
   public K borrowFromLeft(Node<K, V> leftSibling) {
-    if (leftSibling.isLeaf() || leftSibling.getKeyCount() <= MIN_KEYS) {
+    if (leftSibling == null || leftSibling.isLeaf() || leftSibling.getKeyCount() <= MIN_KEYS) {
       return null;
     }
 
@@ -153,35 +157,53 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
       children[i] = children[i - 1];
     }
 
-    K borrowedKey = leftInternal.keys[leftInternal.keyCount - 1];
-    keys[0] = borrowedKey;
+    if (parent == null) return null;
+
+    int thisIndex = getIndexInParent();
+    if (thisIndex <= 0) return null;
+
+    K separatorFromParent = parent.getKeys()[thisIndex - 1];
+
+    keys[0] = separatorFromParent;
+
     children[0] = leftInternal.children[leftInternal.keyCount];
     if (children[0] != null) {
       children[0].setParent(this);
     }
+
+    K newSeparator = leftInternal.keys[leftInternal.keyCount - 1];
 
     leftInternal.keys[leftInternal.keyCount - 1] = null;
     leftInternal.children[leftInternal.keyCount] = null;
     leftInternal.keyCount--;
     this.keyCount++;
 
-    return borrowedKey;
+    return newSeparator;
   }
 
   @Override
   public K borrowFromRight(Node<K, V> rightSibling) {
-    if (rightSibling.isLeaf() || rightSibling.getKeyCount() <= MIN_KEYS) {
+    if (rightSibling == null || rightSibling.isLeaf() || rightSibling.getKeyCount() <= MIN_KEYS) {
       return null;
     }
 
     InternalNodeImpl<K, V> rightInternal = (InternalNodeImpl<K, V>) rightSibling;
 
-    K borrowedKey = rightInternal.keys[0];
-    keys[keyCount] = borrowedKey;
+    if (parent == null) return null;
+
+    int thisIndex = getIndexInParent();
+    if (thisIndex < 0 || thisIndex >= parent.getKeyCount()) return null;
+
+    K separatorFromParent = parent.getKeys()[thisIndex];
+
+    keys[keyCount] = separatorFromParent;
+
     children[keyCount + 1] = rightInternal.children[0];
     if (children[keyCount + 1] != null) {
       children[keyCount + 1].setParent(this);
     }
+
+    K newSeparator = rightInternal.keys[0];
 
     for (int i = 0; i < rightInternal.keyCount - 1; i++) {
       rightInternal.keys[i] = rightInternal.keys[i + 1];
@@ -196,7 +218,7 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
     rightInternal.keyCount--;
     this.keyCount++;
 
-    return rightInternal.getMinKey();
+    return newSeparator;
   }
 
   /**
@@ -284,6 +306,9 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
 
   @Override
   public void setChild(int index, Node<K, V> child) {
+    if (index < 0 || index >= children.length) {
+      throw new IndexOutOfBoundsException("Child index out of bounds: " + index);
+    }
     this.children[index] = child;
     if (child != null) {
       child.setParent(this);
