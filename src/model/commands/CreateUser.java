@@ -2,6 +2,7 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.CmdResultType;
 import model.user.User;
 
 import java.util.Map;
@@ -38,6 +39,6 @@ public class CreateUser extends GenericCommand {
         flags.get("password"),
         flags.get("email")
     );
-    return this.filledResult(User.class, user);
+    return this.filledResult(User.class, user, CmdResultType.USER_INFO);
   }
 }

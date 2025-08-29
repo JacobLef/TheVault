@@ -2,6 +2,7 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.CmdResultType;
 import model.user.User;
 
 import java.util.Map;
@@ -32,6 +33,8 @@ public class GetUser extends GenericCommand {
     Map<String, String> flags = this.flags();
     this.requireFlags(flags, expectedFlags);
     User user = this.model.getUser(flags.get("username"), flags.get("password"));
-    return user == null ? this.emptyResult() : this.filledResult(User.class, user);
+    return user == null ?
+        this.emptyResult() :
+        this.filledResult(User.class, user, CmdResultType.USER_INFO);
   }
 }

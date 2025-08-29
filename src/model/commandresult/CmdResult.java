@@ -1,5 +1,7 @@
 package model.commandresult;
 
+import model.types.CmdResultType;
+
 /**
  * Represents the result of executing a command, such that either a property was extracted from
  * the data returned by the execution of the command or no property/data was extracted. In the
@@ -22,6 +24,14 @@ public interface CmdResult {
    * @throws ClassCastException if the stored property cannot be cast to the expected type.
    */
   <T> T getProperty(Class<T> type) throws ClassCastException;
+
+  /**
+   * Retrieves the type of information which this command result stores. This is not a concrete
+   * type, but rather an enum representation of what this CmdResult stores in context to a banking
+   * application.
+   * @return the appropriate kind.
+   */
+  CmdResultType getKind();
 
   /**
    * Does this CmdResult have anything to return?

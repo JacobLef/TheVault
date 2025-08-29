@@ -2,6 +2,7 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.CmdResultType;
 import model.user.BankAccount;
 
 import java.util.Map;
@@ -37,6 +38,6 @@ public class GetAccount extends GenericCommand {
         flags.get("password"),
         flags.get("accountName")
     );
-    return this.filledResult(BankAccount.class, bc);
+    return this.filledResult(BankAccount.class, bc, CmdResultType.BANK_ACCOUNT);
   }
 }

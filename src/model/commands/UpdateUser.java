@@ -2,6 +2,7 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.CmdResultType;
 import model.types.UserProperty;
 import model.user.User;
 
@@ -39,6 +40,6 @@ public class UpdateUser extends GenericCommand {
         UserProperty.valueOf(flags.get("property")),
         flags.get("value")
     );
-    return this.filledResult(User.class, user);
+    return this.filledResult(User.class, user, CmdResultType.USER_INFO);
   }
 }

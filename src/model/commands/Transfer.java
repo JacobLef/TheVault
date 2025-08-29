@@ -2,6 +2,7 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.CmdResultType;
 import model.user.Transaction;
 
 import java.util.Map;
@@ -45,6 +46,6 @@ public class Transfer extends GenericCommand {
         flags.get("toAccountName"),
         Double.parseDouble(flags.getOrDefault("amount", "0"))
     );
-    return this.filledResult(Transaction.class, transaction);
+    return this.filledResult(Transaction.class, transaction, CmdResultType.TRANSACTION);
   }
 }

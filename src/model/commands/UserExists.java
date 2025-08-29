@@ -2,6 +2,7 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.CmdResultType;
 
 import java.util.Map;
 
@@ -30,6 +31,6 @@ public class UserExists extends GenericCommand {
     Map<String, String> flags = this.flags();
     this.requireFlags(flags, expectedFlags);
     boolean exists = this.model.userExists(flags.get("username"), flags.get("password"));
-    return this.filledResult(Boolean.class, exists);
+    return this.filledResult(Boolean.class, exists, CmdResultType.BOOLEAN_FLAG);
   }
 }

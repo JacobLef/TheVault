@@ -2,6 +2,7 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.CmdResultType;
 import model.user.BankAccount;
 
 import java.util.List;
@@ -29,7 +30,6 @@ public class GetAccounts extends GenericCommand{
     );
   }
 
-
   @Override
   public CmdResult execute() {
     Map<String, String> flags = this.flags();
@@ -38,6 +38,6 @@ public class GetAccounts extends GenericCommand{
         flags.get("username"),
         flags.get("password")
     );
-    return this.filledResult(accList.getClass(), accList);
+    return this.filledResult(List.class, accList, CmdResultType.BANK_ACCOUNT_LIST);
   }
 }

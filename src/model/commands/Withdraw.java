@@ -2,6 +2,7 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.CmdResultType;
 
 import java.util.Map;
 
@@ -38,6 +39,6 @@ public class Withdraw extends GenericCommand {
         flags.get("accountName"),
         Double.parseDouble(flags.getOrDefault("amount", "0"))
     );
-    return this.filledResult(Double.class, withdrawn);
+    return this.filledResult(Double.class, withdrawn, CmdResultType.BALANCE);
   }
 }

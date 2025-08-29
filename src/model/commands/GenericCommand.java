@@ -5,6 +5,7 @@ import model.commandresult.CmdResult;
 import model.commandresult.CmdResultImpl;
 import model.flag_parser.FlagParser;
 import model.flag_parser.FlagParserImpl;
+import model.types.CmdResultType;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -127,11 +128,12 @@ public abstract class GenericCommand implements Command {
    * Constructs a new CmdResult object with respect to the given parameters.
    * @param type the type of the value returned by this GenericCommand.
    * @param prop the property returned by this GenericCommand.
+   * @param kind the kind of information which is being stored in context to the command storing it.
    * @param <T> the type of the object to make a filled result with.
    * @return the respective CmdResult whose fields reflect those given.
    */
-  protected <T> CmdResult filledResult(Class<T> type, T prop) {
-    return CmdResultImpl.of(type, prop);
+  protected <T> CmdResult filledResult(Class<T> type, T prop, CmdResultType kind) {
+    return CmdResultImpl.of(type, prop, kind);
   }
 
   /**

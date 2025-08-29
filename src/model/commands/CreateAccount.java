@@ -3,6 +3,7 @@ package model.commands;
 import model.Model;
 import model.commandresult.CmdResult;
 import model.types.AccountType;
+import model.types.CmdResultType;
 import model.user.BankAccount;
 
 import java.util.Map;
@@ -42,6 +43,6 @@ public class CreateAccount extends GenericCommand {
         AccountType.valueOf(flags.get("accountType")),
         Double.parseDouble(flags.getOrDefault("balance", "0"))
     );
-    return this.filledResult(BankAccount.class, bc);
+    return this.filledResult(BankAccount.class, bc, CmdResultType.BANK_ACCOUNT);
   }
 }

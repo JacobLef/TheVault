@@ -2,6 +2,7 @@ package model.commands;
 
 import model.Model;
 import model.commandresult.CmdResult;
+import model.types.CmdResultType;
 import model.user.UserLog;
 
 import java.util.Map;
@@ -36,6 +37,6 @@ public class DeleteUser extends GenericCommand {
         flags.get("username"),
         flags.get("password")
     );
-    return this.filledResult(UserLog.class, log);
+    return this.filledResult(UserLog.class, log, CmdResultType.USER_LOGS);
   }
 }
