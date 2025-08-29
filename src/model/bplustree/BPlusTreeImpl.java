@@ -58,7 +58,7 @@ public class BPlusTreeImpl<K extends Comparable<K>, V> implements BPlusTree<K,V>
 
   @Override
   public boolean insert(K key, V value) {
-    return false;
+    return true;
   }
 
   @Override
