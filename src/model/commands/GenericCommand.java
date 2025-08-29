@@ -6,6 +6,7 @@ import model.commandresult.CmdResultImpl;
 import model.flag_parser.FlagParser;
 import model.flag_parser.FlagParserImpl;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -156,13 +157,15 @@ public abstract class GenericCommand implements Command {
       }
 
       try {
-        type.cast(givenValue);
-      } catch (ClassCastException e) {
+        if (type != String.class) {
+          type.getMethod("valueOf", String.class).invoke(null, givenValue);
+        }
+      } catch (ClassCastException | InvocationTargetException e) {
         throw new IllegalArgumentException(
             "Command expected the flag of " + key + " to have a type of " + type
             + " but was given the following corresponding value: " + givenValue
         );
-      }
+      } catch (NoSuchMethodException | IllegalAccessException ignored) { }
     }
   }
 }

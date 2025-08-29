@@ -8,7 +8,6 @@ import java.util.Map;
 /**
  * Offers functionality for checking whether a specified account is currently active under a
  * given username.
- *
  */
 public class AccountExists extends GenericCommand {
   /**
