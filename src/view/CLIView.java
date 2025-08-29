@@ -10,4 +10,14 @@ public class CLIView implements View {
     this.model = model;
     this.out = out;
   }
+
+  @Override
+  public void displayError(String s) {
+
+  }
+
+  @Override
+  public void displayMessage(String s) {
+
+  }
 }

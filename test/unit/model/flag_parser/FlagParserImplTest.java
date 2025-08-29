@@ -55,7 +55,7 @@ public class FlagParserImplTest {
     Map<String, String> result = flagParser.parseFlags(tokens);
 
     assertEquals(3, result.size());
-    assertEquals("John", result.get("name")); // Note: only takes first token after flag
+    assertEquals("John Doe", result.get("name"));
     assertEquals("john.doe@email.com", result.get("email"));
     assertEquals("savings", result.get("type"));
   }
