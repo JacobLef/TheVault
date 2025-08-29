@@ -3,90 +3,47 @@ package model.commandresult;
 import java.util.Objects;
 
 /**
- * Default implementation of {@link CmdResult} that stores a single property of any type
- * using the Type-Safe Heterogeneous Container pattern. This implementation maintains
- * the stored property and its runtime type information to enable safe retrieval via
- * type tokens, returning {@code null} when no property has been set or when the
- * requested type does not match the stored property type.
+ * Implementation of {@link CmdResult} using the Type-Safe Heterogeneous Container pattern.
+ * Stores a single property with its type information for safe retrieval via type tokens.
+ * Prefers static factory methods over builder pattern for simplicity and type safety.
  */
 public class CmdResultImpl implements CmdResult {
   private final Object prop;
   private final Class<?> type;
 
   /**
-   * Builder class for CmdResultImpl objects.
-   */
-  public static class Builder {
-    private Object prop;
-    private Class<?> type;
-
-    /**
-     * Constructs a new Builder object with default values of {@code null} for all fields.
-     */
-    public Builder() {
-      this.prop = null;
-      this.type = null;
-    }
-
-    /**
-     * Sets the {@code prop} field of this builder with the respective given prop value.
-     * @param prop the new property of this Builder.
-     * @return this Builder.
-     */
-    public Builder withProp(Object prop) {
-      this.prop = prop;
-      return this;
-    }
-
-    /**
-     * Set the {@code type} field of this builder with the respective given type value;
-     * @param type the new type property of this Builder.
-     * @return this Builder.
-     */
-    public Builder withType(Class<?> type) {
-      this.type = type;
-      return this;
-    }
-
-    /**
-     * Constructs a new CmdResult object whose fields mimic those of this Builder.
-     * @return the newly created CmdResult object.
-     * @throws IllegalStateException if one of the fields is not {@code null} and the other is.
-     */
-    public CmdResult build() throws IllegalStateException {
-      if ((this.prop == null && this.type != null) || (this.prop != null && this.type == null)) {
-        throw new IllegalStateException(
-          "Cannot build a CmdResult with a null prop and non-null type or with a "
-          + "null type and a non-null prop!"
-        );
-      }
-      return new CmdResultImpl(prop, type);
-    }
-  }
-
-  /**
-   * Constructs a new CmdResultImpl with {@code null} fields. Is public so that other classes
-   * have a quick way to indicate the absence of any result.
-   */
-  public CmdResultImpl() {
-    this.prop = null;
-    this.type = null;
-  }
-
-  /**
-   * Constructs a new CmdResultImpl object with respect to the given property and type.
-   * @param prop the property of this Builder.
-   * @param type the internal type of this Builder which must match with the external type given
-   *             when the getProperty method is invoked.
+   * Private constructor for internal use.
    */
   private CmdResultImpl(Object prop, Class<?> type) {
     this.prop = prop;
     this.type = type;
   }
 
+  /**
+   * Creates a CmdResult containing the specified property with compile-time type safety.
+   * @param type the Class token for the property type
+   * @param value the value to store (can be null)
+   * @param <T> the type of the property
+   * @return a new CmdResultImpl containing the property
+   */
+  public static <T> CmdResultImpl of(Class<T> type, T value) {
+    Objects.requireNonNull(type, "Type cannot be null");
+    return new CmdResultImpl(value, type);
+  }
+
+  /**
+   * Creates an empty CmdResult with no property.
+   * @return a new empty CmdResultImpl
+   */
+  public static CmdResultImpl empty() {
+    return new CmdResultImpl(null, null);
+  }
+
   @Override
-  public <T> T getProperty(Class<T> externalType) throws ClassCastException {
-    if (!this.hasProperty() || !Objects.equals(type, externalType)) {
+  public <T> T getProperty(Class<T> externalType) {
+    Objects.requireNonNull(externalType, "Type cannot be null");
+
+    if (!hasProperty() || !Objects.equals(type, externalType)) {
       return null;
     }
 
@@ -95,6 +52,28 @@ public class CmdResultImpl implements CmdResult {
 
   @Override
   public boolean hasProperty() {
-    return this.prop == null;
+    return prop != null;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+
+    CmdResultImpl that = (CmdResultImpl) obj;
+    return Objects.equals(prop, that.prop) && Objects.equals(type, that.type);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(prop, type);
+  }
+
+  @Override
+  public String toString() {
+    if (!hasProperty()) {
+      return "CmdResultImpl{empty}";
+    }
+    return String.format("CmdResultImpl{prop=%s, type=%s}", prop, type.getSimpleName());
   }
 }

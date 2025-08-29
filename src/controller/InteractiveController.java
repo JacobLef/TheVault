@@ -46,7 +46,7 @@ public class InteractiveController implements Controller {
         if (split[0].trim().equalsIgnoreCase("exit")) {
           this.view.displayMessage(
               "Closing down connection to bank: "
-                  + this.model.getCurrentlyActiveBank().getRecords()
+                  + this.model.getCurrentlyActiveBank()
           );
           break;
         }

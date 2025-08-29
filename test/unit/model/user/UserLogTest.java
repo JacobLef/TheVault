@@ -1,27 +1,22 @@
-package unit;
+package unit.model.user;
 
-import model.user.UserLog;
-import model.user.User;
+import model.types.AccountStatus;
+import model.types.AccountType;
+import model.types.TransactionType;
 import model.user.BankAccount;
 import model.user.Transaction;
-import model.types.AccountType;
-import model.types.AccountStatus;
-import model.types.TransactionType;
+import model.user.User;
+import model.user.UserLog;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This is a tester class for UserLog objects (record).

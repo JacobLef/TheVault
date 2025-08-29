@@ -1,4 +1,4 @@
-package unit;
+package unit.model.user;
 
 import model.user.User;
 import org.junit.jupiter.api.BeforeEach;

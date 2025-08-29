@@ -1,4 +1,4 @@
-package unit;
+package unit.model.security;
 
 import model.security.PasswordService;
 import model.security.PasswordServiceImpl;

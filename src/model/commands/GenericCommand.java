@@ -120,17 +120,18 @@ public abstract class GenericCommand implements Command {
    * @return a CmdResultImpl object will all {@code null} fields.
    */
   protected CmdResult emptyResult() {
-    return new CmdResultImpl();
+    return CmdResultImpl.empty();
   }
 
   /**
    * Constructs a new CmdResult object with respect to the given parameters.
    * @param type the type of the value returned by this GenericCommand.
    * @param prop the property returned by this GenericCommand.
+   * @param <T> the type of the object to make a filled result with.
    * @return the respective CmdResult whose fields reflect those given.
    */
-  protected CmdResult filledResult(Class<?> type, Object prop) {
-    return new CmdResultImpl.Builder().withType(type).withProp(prop).build();
+  protected <T> CmdResult filledResult(Class<T> type, T prop) {
+    return CmdResultImpl.of(type, prop);
   }
 
   /**
