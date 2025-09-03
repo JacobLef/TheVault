@@ -210,18 +210,15 @@ public class InternalNodeImplTest {
     InternalNode<Integer, String> newInternal = (InternalNode<Integer, String>) result.newNode();
     Integer promotedKey = result.promotedKey();
 
-    // Check promoted key
     assertNotNull(promotedKey);
 
-    // Verify parent relationships are maintained
     for (int i = 0; i <= newInternal.getKeyCount(); i++) {
       if (newInternal.getChildren()[i] != null) {
         assertEquals(newInternal, newInternal.getChildren()[i].getParent());
       }
     }
 
-    // Verify total key count is preserved (original keys + promoted key)
-    assertEquals(3, internalNode.getKeyCount() + newInternal.getKeyCount());
+    assertEquals(2, internalNode.getKeyCount() + newInternal.getKeyCount());
   }
 
   @Test

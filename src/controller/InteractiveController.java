@@ -17,8 +17,10 @@ import java.util.function.Function;
  * one by one, rather than an entire file of instructions.
  *
  * <p>
- *  The interactive controller is entirely responsible for the validation of user inputs, and so
- *  it can be assumed that any input it passes along to the given Model or View is valid.
+ *   Though usually the Controller is responsible for validation of user input, the Model and the
+ *   commands stored within the Model package are responsible for the validation of their
+ *   respective input. Thus, any validation errors should be assumed to be the fault of the
+ *   respective command, except for white-space removal errors.
  * </p>
  */
 public class InteractiveController implements Controller {

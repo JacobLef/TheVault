@@ -1,5 +1,7 @@
 package model.bplustree;
 
+import java.util.Arrays;
+
 /**
  * An internal node in a B+ tree that contains only keys and child pointers for navigation.
  * Internal nodes guide searches toward the appropriate leaf nodes but store no actual values.
@@ -112,7 +114,9 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
     }
 
     this.keyCount += otherInternal.keyCount;
-    otherInternal.clear();
+
+    otherInternal.keyCount = 0;
+    Arrays.fill(otherInternal.children, null);
   }
 
   @Override
@@ -245,8 +249,8 @@ public class InternalNodeImpl<K extends Comparable<K>, V>
     for (int i = 0; i <= keyCount; i++) {
       if (children[i] != null) {
         children[i].clear();
-        children[i] = null;
       }
+      children[i] = null;
     }
     keyCount = 0;
     this.parent = null;

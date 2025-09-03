@@ -13,5 +13,5 @@ public enum CmdResultType {
   USER_LOGS,
   BALANCE,
   BOOLEAN_FLAG,
-  TRANSACTION,
+  TRANSACTION
 }
