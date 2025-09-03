@@ -11,6 +11,7 @@ import java.io.IOException;
  * limited public functionality except for starting the program.
  * <p>
  */
+@FunctionalInterface
 public interface Controller {
   /**
    * Begins execution of the banking application and continues to execute the program until
