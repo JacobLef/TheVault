@@ -680,7 +680,8 @@ public class Bank implements Managed {
   }
 
   @Override
-  public Managed getCurrentlyActiveBank() {
+  public Managed getActiveBank() {
+    // this method will never throw an exception for Banks.
     return this;
   }
 

@@ -80,7 +80,7 @@ public class InteractiveController implements Controller {
       try {
         if (split[0].equalsIgnoreCase("exit")) {
           this.view.displayMessage(
-              "Closing down connection to bank: " + this.model.getCurrentlyActiveBank()
+              "Closing down connection to bank: " + this.model.
           );
           break;
         }

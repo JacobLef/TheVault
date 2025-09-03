@@ -155,10 +155,4 @@ public interface Model extends ReadableModel {
       String toAccountName,
       double amount
   ) throws IllegalArgumentException;
-
-  /**
-   * Fetches the currently active Bank within this Model. The Bank which is currently active is
-   * defined as the one being actively used by the user.
-   */
-  Managed getCurrentlyActiveBank();
 }

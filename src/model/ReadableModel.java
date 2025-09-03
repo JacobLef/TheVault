@@ -81,4 +81,12 @@ public interface ReadableModel {
    * @return true if the user does exist and false otherwise.
    */
   boolean userExists(String userName, String password);
-}
+
+
+  /**
+   * Returns the currently active Bank, if there is one.
+   * @return The currently active Bank if there is one and {@code null} otherwise.
+   * @throws UnsupportedOperationException if there is no currently active Managed model within this
+   *         Manager.
+   */
+  Managed getActiveBank() throws UnsupportedOperationException;}
