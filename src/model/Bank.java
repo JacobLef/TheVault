@@ -657,6 +657,11 @@ public class Bank implements Managed {
   }
 
   @Override
+  public String getName() {
+    return this.name;
+  }
+
+  @Override
   public boolean accountExists(String username, String accountName) {
     return engine.exists(
         name, routingNumber, "accounts",

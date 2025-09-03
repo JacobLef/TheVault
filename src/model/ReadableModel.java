@@ -67,6 +67,12 @@ public interface ReadableModel {
   ) throws IllegalArgumentException;
 
   /**
+   * Fetches the name of this ReadableModel.
+   * @return the name of this ReadableModel.
+   */
+  String getName();
+
+  /**
    * Does the given account exist under the given user in this ReadableModel?
    * @param userName  The user to check under.
    * @param accountName The name of the account which is to be checked for its presence.

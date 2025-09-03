@@ -1,7 +1,9 @@
 package model;
 
+import model.data_engine.DataBase;
 import model.data_engine.DataEngine;
 import model.security.PasswordService;
+import model.security.PasswordServiceImpl;
 import model.types.AccountType;
 import model.types.UserProperty;
 import model.user.BankAccount;
@@ -9,11 +11,7 @@ import model.user.Transaction;
 import model.user.User;
 import model.user.UserLog;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * Represents the ability to manage any arbitrary number of Banks, so long as they are delimited
@@ -63,6 +61,14 @@ public class BankManager implements Manager {
      * @return the newly created BankManager object.
      */
     public BankManager build() {
+      if (this.de == null) {
+        this.de = DataBase.getInstance();
+      }
+
+      if (this.ps == null) {
+        this.ps = new PasswordServiceImpl();
+      }
+
       return new BankManager(this);
     }
   }
@@ -89,18 +95,18 @@ public class BankManager implements Manager {
 
   @Override
   public Managed createBank(String bankName, int routingNumber) {
-    boolean duplicateRouting = routingNumbers.add(routingNumber);
-    boolean duplicateBankName = bankNames.add(bankName);
 
-    if (duplicateBankName) {
-      throw new IllegalArgumentException("Duplicate bank name: " + bankName);
-    }
-
-    if (duplicateRouting) {
+    if (routingNumbers.contains(routingNumber)) {
       throw new IllegalArgumentException("Duplicate routing number: " + routingNumber);
     }
 
+    if (bankNames.contains(bankName)) {
+      throw new IllegalArgumentException("Duplicate bank name: " + bankName);
+    }
+
     Managed res = new Bank(this.de, this.ps, bankName, routingNumber);
+    this.bankNames.add(bankName);
+    this.routingNumbers.add(routingNumber);
     this.managed.put(routingNumber, res);
     return res;
   }
@@ -116,7 +122,13 @@ public class BankManager implements Manager {
   public Managed removeBank(int routingNumber) throws IllegalArgumentException {
     validateRoutingNumber(routingNumber);
 
-    return this.managed.remove(routingNumber);
+    Managed res = this.managed.remove(routingNumber);
+    if (res == this.active) {
+      this.active = null;
+    }
+    this.routingNumbers.remove(routingNumber);
+    this.bankNames.remove(res.getName());
+    return res;
   }
 
   @Override
@@ -151,13 +163,13 @@ public class BankManager implements Manager {
       String password,
       String email
   ) throws IllegalArgumentException, NullPointerException, UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.createUser(userName, password, email);
   }
 
   @Override
   public UserLog deleteUser(String userName, String password) throws RuntimeException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.deleteUser(userName, password);
   }
 
@@ -168,7 +180,7 @@ public class BankManager implements Manager {
       UserProperty prop,
       String newValue
   ) throws UnsupportedOperationException, IllegalArgumentException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.updateUser(userName, password, prop, newValue);
   }
 
@@ -180,7 +192,7 @@ public class BankManager implements Manager {
       AccountType type,
       double... initBalance
   ) throws IllegalArgumentException, NullPointerException, UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.createAccount(userName, password, accountName, type, initBalance);
   }
 
@@ -190,7 +202,7 @@ public class BankManager implements Manager {
       String password,
       String accountName
   ) throws IllegalArgumentException, UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.deleteAccount(userName, password, accountName);
   }
 
@@ -201,7 +213,7 @@ public class BankManager implements Manager {
       String accountName,
       double amount
   ) throws IllegalArgumentException, IllegalStateException, UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.withdraw(userName, password, accountName, amount);
   }
 
@@ -212,7 +224,7 @@ public class BankManager implements Manager {
       String accountName,
       double amount
   ) throws IllegalArgumentException, UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     this.active.deposit(userName, password, accountName, amount);
   }
 
@@ -226,7 +238,7 @@ public class BankManager implements Manager {
       String toAccountName,
       double amount
   ) throws IllegalArgumentException, UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.transfer(
         fromUserName,
         toUserName,
@@ -244,13 +256,13 @@ public class BankManager implements Manager {
       String password,
       String accountName
   ) throws IllegalArgumentException, UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.getBalance(userName, password, accountName);
   }
 
   @Override
   public User getUser(String userName, String password) throws UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.getUser(userName, password);
   }
 
@@ -259,7 +271,7 @@ public class BankManager implements Manager {
       String userName,
       String password
   ) throws UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.getAccountsFor(userName, password);
   }
 
@@ -269,8 +281,14 @@ public class BankManager implements Manager {
       String password,
       String accountName
   ) throws IllegalArgumentException, UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.getAccountFor(userName, password, accountName);
+  }
+
+  @Override
+  public String getName() {
+    hasActiveBank();
+    return this.active.getName();
   }
 
   @Override
@@ -278,13 +296,13 @@ public class BankManager implements Manager {
       String userName,
       String accountName
   ) throws UnsupportedOperationException{
-    validateActiveUser();
+    hasActiveBank();
     return this.active.accountExists(userName, accountName);
   }
 
   @Override
   public boolean userExists(String userName, String password) throws UnsupportedOperationException {
-    validateActiveUser();
+    hasActiveBank();
     return this.active.userExists(userName, password);
   }
 
@@ -293,7 +311,7 @@ public class BankManager implements Manager {
    * functionality to (is it {@code null} ?)
    * @throws UnsupportedOperationException if there is no currently active Managed model.
    */
-  private void validateActiveUser() throws UnsupportedOperationException {
+  private void hasActiveBank() throws UnsupportedOperationException {
     if (this.active == null) {
       throw new UnsupportedOperationException("No active bank found to perform operations on.");
     }
