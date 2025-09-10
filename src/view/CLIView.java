@@ -5,8 +5,9 @@ import model.ReadableModel;
 import java.io.IOException;
 
 /**
- * Represents functionality to display information to the user with regards to the command-lind
- * interface.
+ * Represents functionality to display information to the user regarding the command-lind
+ * interface. Offers the ability to display both errors and messages to the user, without
+ * crashing the program.
  */
 public class CLIView implements View {
   private ReadableModel model;
@@ -22,7 +23,7 @@ public class CLIView implements View {
     try {
       this.out.append("Error: ").append(s);
     } catch (IOException e) {
-
+      throw new RuntimeException(e.getMessage());
     }
   }
 
@@ -31,7 +32,7 @@ public class CLIView implements View {
     try {
       this.out.append(s);
     } catch (IOException e) {
-
+      throw new RuntimeException(e.getMessage());
     }
   }
 }

@@ -1,12 +1,15 @@
 package model.data_engine.table;
 
+import model.types.AccountStatus;
+import model.types.AccountType;
 import model.types.DataType;
+import model.types.TransactionType;
 
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -171,6 +174,9 @@ public class TableSchemaImpl implements TableSchema {
       case STRING -> value instanceof String;
       case DATETIME -> value instanceof Date || value instanceof LocalDateTime;
       case BOOLEAN -> value instanceof Boolean;
+      case ACCOUNT_TYPE -> value instanceof AccountType;
+      case ACCOUNT_STATUS -> value instanceof AccountStatus;
+      case TRANSACTION_TYPE -> value instanceof TransactionType;
     };
   }
 

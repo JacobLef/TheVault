@@ -32,6 +32,29 @@ public class BPlusTreeImplTest {
   }
 
   @Test
+  void debugRangeQuery() {
+    bankingTree.insert("ACC001", 1000.00);
+    bankingTree.insert("ACC005", 2000.00);
+    bankingTree.insert("ACC010", 3000.00);
+    bankingTree.insert("ACC015", 4000.00);
+    bankingTree.insert("ACC020", 5000.00);
+
+    // Debug: Check if insertions worked
+    System.out.println("Size: " + bankingTree.size());
+    System.out.println("ACC005: " + bankingTree.get("ACC005"));
+    System.out.println("ACC010: " + bankingTree.get("ACC010"));
+    System.out.println("ACC015: " + bankingTree.get("ACC015"));
+
+    // Debug: Check min/max
+    System.out.println("Min key: " + bankingTree.getMinKey());
+    System.out.println("Max key: " + bankingTree.getMaxKey());
+
+    Map<String, Double> range = bankingTree.rangeQuery("ACC005", "ACC015");
+    System.out.println("Range query result size: " + range.size());
+    System.out.println("Range contents: " + range);
+  }
+
+  @Test
   void insertAndRetrieveNewKeyValuePair() {
     assertTrue(tree.insert(5, "five"));
     assertEquals("five", tree.get(5));

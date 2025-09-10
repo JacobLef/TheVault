@@ -1,5 +1,7 @@
 package model.data_engine;
 
+import model.Bank;
+
 import java.util.List;
 import java.util.Map;
 
@@ -169,5 +171,13 @@ public interface DataEngine {
    * @throws IllegalStateException if no transaction is currently active
    */
   void rollbackTransaction() throws IllegalStateException;
+
+  /**
+   * Registers a bank with this data engine to enable data operations.
+   * @param bank the bank to register
+   * @param routingNumber the unique routing number for this bank
+   * @throws IllegalArgumentException if the bank name or routing number is already registered
+   */
+  void registerBank(Bank bank, int routingNumber) throws IllegalArgumentException;
 }
 
