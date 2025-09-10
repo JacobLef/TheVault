@@ -657,7 +657,7 @@ public class DataBase implements DataEngine {
   ) throws IllegalArgumentException, NullPointerException {
     validateBankRegistration(bankName, routingNumber);
     List<Map<String, Object>> results = select(bankName, routingNumber, tableName, criteria);
-    return results.isEmpty() ? null : results.get(0);
+    return results.isEmpty() ? null : results.getFirst();
   }
 
   @Override
