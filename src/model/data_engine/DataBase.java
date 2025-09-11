@@ -1041,8 +1041,9 @@ public class DataBase implements DataEngine {
 
   /**
    * Updates account indexes when an account record is modified to maintain consistency.
-   * Handles owner username changes by updating the owner username index and internal account key mapping.
-   * Rebuilds composite keys when ownership information changes to preserve lookup efficiency.
+   * Handles owner username changes by updating the owner username index and internal account key
+   * mapping. Rebuilds composite keys when ownership information changes to preserve lookup
+   * efficiency.
    *
    * @param oldRecord the account record before modification containing original values
    * @param newRecord the account record after modification containing updated values

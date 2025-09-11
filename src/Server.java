@@ -22,7 +22,7 @@ public class Server {
         1984
     );
 
-    View view = new CLIView(model, System.out);
+    View view = new CLIView(System.out);
     Controller controller = new InteractiveController(System.in, model, view);
 
     try {
