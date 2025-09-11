@@ -36,10 +36,10 @@ docker compose up
 docker compose -d up
 ````
 
-## What I would change if I were to redo this project:
-- Change from a monolithic architecture to a microservices architecture
-    => The monolithic architecture allows for ease of coding at the start, and provides a concise, easy place to find any piece of code I have written
-    but it presents issues with networking, concurrency, and the possibility of extension.
-    => A microservices architecture would solve all of these problems, but would require the main banking class to be split into separate services, each for
-    a specific command/functionality, with their own helper classes. This provides too heavy of a change to make once the program is already tied to the monolithic
-    nature of the Bank and would require a heavy overall to change over to at this moment.
+## Work in progress
+- This project is still a work in progress. There are bugs to be worked out and more features to 
+  implement.
+- Bugs to fix: BPlusTree is not correctly shifting elements around. DataBase is untested. 
+  Commands are untested. Missing command to register a Bank with the Database before you can 
+  start using them, so the CLI is technically unusable.
+- Features to be added: logging, caching, networking (possibly)
