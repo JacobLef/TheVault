@@ -82,11 +82,9 @@ public class BPlusTreeImpl<K extends Comparable<K>, V> implements BPlusTree<K,V>
     LeafNode<K, V> targetLeaf = findLeaf(key);
 
     try {
-      boolean isNewKey = targetLeaf.insertUnique(key, value);
-      return isNewKey;
+      return targetLeaf.insertUnique(key, value);
     } catch (IllegalStateException e) {
-      boolean isNewKey = handleLeafOverflow(targetLeaf, key, value);
-      return isNewKey;
+      return handleLeafOverflow(targetLeaf, key, value);
     }
   }
 

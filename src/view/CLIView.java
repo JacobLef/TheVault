@@ -39,7 +39,6 @@ public class CLIView implements View {
   public void displayTable(List<String> headers, List<List<String>> rows) {
     if (headers.isEmpty()) return;
 
-    // Calculate column widths
     int[] columnWidths = new int[headers.size()];
     for (int i = 0; i < headers.size(); i++) {
       columnWidths[i] = headers.get(i).length();
@@ -51,11 +50,9 @@ public class CLIView implements View {
       }
     }
 
-    // Display header
     displayTableRow(headers, columnWidths);
     displayTableSeparator(columnWidths);
 
-    // Display data rows
     for (List<String> row : rows) {
       displayTableRow(row, columnWidths);
     }
@@ -97,12 +94,16 @@ public class CLIView implements View {
 
   @Override
   public void clear() {
-    // For CLI, we'll just add some newlines to simulate clearing
     safeAppend(System.lineSeparator().repeat(50));
   }
 
   @Override
-  public void displayAccountSummary(String accountName, double balance, String accountType, String status) {
+  public void displayAccountSummary(
+      String accountName,
+      double balance,
+      String accountType,
+      String status
+  ) {
     safeAppend("Account Summary:" + System.lineSeparator());
     safeAppend("  Name: " + accountName + System.lineSeparator());
     safeAppend("  Balance: $" + String.format("%.2f", balance) + System.lineSeparator());
@@ -112,7 +113,13 @@ public class CLIView implements View {
   }
 
   @Override
-  public void displayTransaction(String fromAccount, String toAccount, double amount, String type, String timestamp) {
+  public void displayTransaction(
+      String fromAccount,
+      String toAccount,
+      double amount,
+      String type,
+      String timestamp
+  ) {
     safeAppend("Transaction:" + System.lineSeparator());
     safeAppend("  From: " + fromAccount + System.lineSeparator());
     safeAppend("  To: " + toAccount + System.lineSeparator());
